@@ -1,0 +1,93 @@
+src/components/QueuePanel.tsx
+  s_34cee9fc3fc328::t_b8828bc409d5ca 15-16
+  s_34cee9fc3fc328::t_2e6be73c5b493e 47-48
+  s_34cee9fc3fc328::t_6fa2d39c3db4ed 1-14,17-46,49-59
+src/util.ts
+  s_34cee9fc3fc328::t_3e1a5085e5cd44 1-9
+src/main.tsx
+  s_34cee9fc3fc328::t_c375f9902d0694 1-10
+src-tauri/src/lib.rs
+  s_34cee9fc3fc328::t_a83dbd83d55f59 1-24
+src/index.css
+  s_34cee9fc3fc328::t_983f4260add62e 1-62,66-514
+  s_34cee9fc3fc328::t_2a6efa15644916 63-65
+src-tauri/src/bilibili.rs
+  s_34cee9fc3fc328::t_36927b3ce4202b 1-227
+src/engine.ts
+  s_34cee9fc3fc328::t_c2f6e0eb394143 1-102
+src/components/AddBar.tsx
+  s_34cee9fc3fc328::t_f2202e8c86d2ff 1-50
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_8556dcdff0a2f4 1-144
+package.json
+  s_34cee9fc3fc328::t_7f428dbc8d1366 1-27
+src-tauri/src/commands.rs
+  s_34cee9fc3fc328::t_1befb79145e961 1-23
+src/api.ts
+  s_34cee9fc3fc328::t_f74d4a1c1f3131 1-61
+vite.config.ts
+  s_34cee9fc3fc328::t_6336f03f0ab4fb 1-9
+src/store.ts
+  s_34cee9fc3fc328::t_ce8d193a70880d 1-5,7-64,66-204,216-265
+  s_34cee9fc3fc328::t_7b5d5080d73ed4 205-215
+  s_34cee9fc3fc328::t_c7549b8bd8f77e 6
+  s_34cee9fc3fc328::t_d21134fa3200b0 65
+src/App.tsx
+  s_34cee9fc3fc328::t_3a5529ef22c73c 1-3,5-42,44-90
+  s_34cee9fc3fc328::t_336e15efaf5206 4
+  s_34cee9fc3fc328::t_e49872ddce6ee1 43
+src-tauri/src/proxy.rs
+  s_34cee9fc3fc328::t_83a547a247c87d 1-5,7,9-145
+  s_34cee9fc3fc328::t_639032a06aae8b 6
+  s_34cee9fc3fc328::t_4c2f1b482bfc32 8
+src-tauri/icons/android/values/ic_launcher_background.xml
+  s_34cee9fc3fc328::t_fe8687ccede3d0 1-4
+src/components/icons.tsx
+  s_34cee9fc3fc328::t_6552b44ba5b50f 1-141
+src-tauri/src/main.rs
+  s_34cee9fc3fc328::t_9a59ee78adea2d 1-6
+src/components/PlayerBar.tsx
+  s_34cee9fc3fc328::t_0c819b0129429e 1-83
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_15fdb03d06a9ef 1-28
+src/components/NowPlaying.tsx
+  s_34cee9fc3fc328::t_7ab99cf29630bd 1-46
+index.html
+  s_34cee9fc3fc328::t_289d7a9f8cb780 1-12
+tsconfig.json
+  s_34cee9fc3fc328::t_589a1eaabd864f 1-20
+src-tauri/build.rs
+  s_34cee9fc3fc328::t_f2d3ea908ac086 1-3
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_92f6d3fea0c157 1-32
+src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml
+  s_34cee9fc3fc328::t_fe8687ccede3d0 1-5
+src-tauri/capabilities/default.json
+  s_34cee9fc3fc328::t_2bdc89adb1179c 1-7
+scripts/gen-icon.ps1
+  s_34cee9fc3fc328::t_b26c33d8a8297d 4-11,13-22,24-30,46,55-58
+  s_34cee9fc3fc328::t_0f65a0d57b2922 33,35,38-42,44-45,48-54,59-60
+  s_34cee9fc3fc328::t_a0fe64f4ce9bfe 34,36-37
+  s_34cee9fc3fc328::t_6653f3581d53c9 1-3,12,23,31,43,47
+  s_34cee9fc3fc328::t_ce22d8ea2ffa15 32
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_07d275f7553630 1-5430
+package-lock.json
+  s_34cee9fc3fc328::t_29615d9e864eac 1-2110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "55e3e6c76597a582589176ad6a5091945a56c9bc",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
