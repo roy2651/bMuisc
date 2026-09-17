@@ -1,0 +1,19 @@
+docs/project-plan.md
+  s_bf5bcae3a19218::t_5f6ccc6fc4f5cb 246-259
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "97111c556af50b8c437f02f6bfa1eabcf0ad13fb",
+  "prompts": {},
+  "sessions": {
+    "s_bf5bcae3a19218": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0ae51-a693-7261-8fbf-0c7836e83362",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
