@@ -1,0 +1,32 @@
+demo/server.mjs
+  s_34cee9fc3fc328::t_54664b33a132ed 25
+  s_34cee9fc3fc328::t_0d53c278a0c9b3 10-16,26,31,35-40,42-45,50-51,53,102,106,110-119,129,131-161,164-165,203
+  s_34cee9fc3fc328::t_2107cfd16abcb9 79-84,93
+  s_34cee9fc3fc328::t_c59a64176ebf2e 1-9,17-24,27-30,32-34,41,46-49,52,54-78,85-92,94-101,103-105,107-109,120-128,130,162-163,166-202,204
+docs/m0-findings.md
+  s_34cee9fc3fc328::t_d6721e2ab194ad 38
+  s_34cee9fc3fc328::t_8e1971411ae302 75-78
+  s_34cee9fc3fc328::t_1ab18def97b78f 61
+demo/index.html
+  s_34cee9fc3fc328::t_abcb80ffab9827 121
+  s_34cee9fc3fc328::t_a7510e50a7ef9a 56
+  s_34cee9fc3fc328::t_a3cfa245c61da5 158-162
+  s_34cee9fc3fc328::t_8a5063004d4323 89,105,109,115,117-120,122,127-132
+  s_34cee9fc3fc328::t_4e8c2c2ae65db7 1-55,57-88,90-104,106-108,110-114,116,123-126,133-157,163-174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f4d8552a2cd9be4f6d816777f1849e45871f4204",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
