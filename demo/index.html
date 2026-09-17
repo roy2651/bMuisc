@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bMuisc M0 音频解析 Demo</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #222; }
+  main { max-width: 780px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #777; font-size: 13px; margin-bottom: 20px; }
+  .row { display: flex; gap: 8px; }
+  input[type=text] { flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+  button { padding: 10px 18px; border: 0; border-radius: 8px; background: #fb7299; color: #fff; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.plain { background: #4a72f5; }
+  .card { background: #fff; border: 1px solid #e4e6ea; border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .meta { display: flex; gap: 14px; }
+  .meta img { width: 168px; border-radius: 8px; align-self: flex-start; }
+  .meta .info { flex: 1; min-width: 0; }
+  .meta h2 { font-size: 16px; margin: 0 0 6px; }
+  .meta p { margin: 2px 0; font-size: 13px; color: #555; }
+  select { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; max-width: 100%; }
+  .quality { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .quality label { font-size: 14px; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  audio { width: 100%; margin-top: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #eee; }
+  th { color: #888; font-weight: 500; }
+  .err { background: #fdecec; color: #b42318; border: 1px solid #f5c2c0; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 14px; display: none; }
+  .note { font-size: 12px; color: #999; margin-top: 10px; }
+  .total { font-size: 13px; color: #555; margin-top: 6px; }
+  .muted { color: #888; }
+</style>
+</head>
+<body>
+<main>
+  <h1>bMuisc M0 音频解析 Demo</h1>
+  <div class="sub">粘贴 B 站视频链接或 BV 号 → 解析元信息 → 选择分 P 与音质 → 播放独立音频流。本地代理只放行解析得到的流地址（注册表模式）。</div>
+
+  <div class="row">
+    <input id="input" type="text" placeholder="例如 https://www.bilibili.com/video/BV1cLeE6yE9R/">
+    <button id="btnResolve">解析</button>
+  </div>
+  <div id="err" class="err"></div>
+
+  <section id="metaCard" class="card" hidden>
+    <div class="meta">
+      <img id="cover" alt="封面">
+      <div class="info">
+        <h2 id="title"></h2>
+        <p>UP 主：<span id="owner"></span> · 总时长：<span id="duration"></span></p>
+        <p id="pageRow">分 P：<select id="pageSel"></select></p>
+        <p id="seasonRow">合集：<span id="seasonTitle"></span><br><select id="seasonSel"></select></p>
+        <p><button id="btnStreams" class="plain">获取音频流</button></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="playCard" class="card" hidden>
+    <strong style="font-size:14px">音质（DASH 独立音频轨）</strong>
+    <div id="quality" class="quality"></div>
+    <audio id="player" controls preload="none"></audio>
+    <div class="note">正在播放的 src 是本地代理 <code>/audio/&lt;key&gt;</code>；只有音频流被传输。</div>
+
+    <strong style="font-size:14px; display:block; margin-top:16px">视频轨信息（仅展示，音频模式不加载）</strong>
+    <table id="videoTable">
+      <thead><tr><th>编码</th><th>分辨率</th><th>码率</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <strong style="font-size:14px">代理请求日志（实时核验：只拉音频，零视频流量）</strong>
+    <table>
+      <thead><tr><th>时间</th><th>类型</th><th>主机</th><th>Range</th><th>状态</th><th>字节数</th></tr></thead>
+      <tbody id="logBody"><tr><td colspan="6" class="muted">暂无请求</td></tr></tbody>
+    </table>
+    <div class="total">音频累计传输：<span id="audioBytes">0</span></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let view = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function showError(msg) { const e = $('err'); e.textContent = msg; e.style.display = msg ? 'block' : 'none'; }
+function fmtDur(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function fmtBytes(n) {
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+  return n + ' B';
+}
+
+async function post(url) {
+  const r = await fetch(url);
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+
+async function doResolve(input) {
+  showError('');
+  $('btnResolve').disabled = true;
+  try {
+    view = await post('/api/resolve?input=' + encodeURIComponent(input));
+    $('cover').src = view.cover;
+    $('title').textContent = view.title;
+    $('owner').textContent = view.owner;
+    $('duration').textContent = fmtDur(view.duration);
+    $('pageSel').innerHTML = view.pages
+      .map(p => `<option value="${p.cid}">P${p.page} ${esc(p.part)} (${fmtDur(p.duration)})</option>`).join('');
+    $('pageRow').style.display = view.pages.length > 1 ? 'block' : 'none';
+    if (view.season && view.season.episodes.length) {
+      $('seasonTitle').textContent = `${view.season.title}（共${view.season.episodes.length}集）`;
+      $('seasonSel').innerHTML = view.season.episodes
+        .map(e => `<option value="${e.bvid}" ${e.bvid === view.bvid ? 'selected' : ''}>${esc(e.title)} (${fmtDur(e.duration)})</option>`).join('');
+      $('seasonRow').style.display = 'block';
+    } else $('seasonRow').style.display = 'none';
+    $('metaCard').hidden = false;
+    $('playCard').hidden = true;
+  } catch (e) { showError('解析失败：' + e.message); }
+  $('btnResolve').disabled = false;
+}
+
+$('btnResolve').onclick = () => doResolve($('input').value);
+$('seasonSel').onchange = () => {
+  const bv = $('seasonSel').value;
+  if (bv) doResolve('https://www.bilibili.com/video/' + bv + '/');
+};
+
+$('btnStreams').onclick = async () => {
+  showError('');
+  $('btnStreams').disabled = true;
+  try {
+    const cid = $('pageSel').value || view.pages[0].cid;
+    const data = await post(`/api/streams?bv=${encodeURIComponent(view.bvid)}&cid=${cid}`);
+    $('quality').innerHTML = data.audio.map((a, i) => `
+      <label><input type="radio" name="q" value="${a.key}" ${i === 0 ? 'checked' : ''}>
+      ${a.codecs} · ${Math.round(a.bandwidth / 1000)} kbps · 音轨 id ${a.id}</label>`).join('');
+    $('videoTable').querySelector('tbody').innerHTML = data.video.slice(0, 6).map(v => `
+      <tr><td>${v.codecs}</td><td>${v.width}×${v.height}</td><td>${Math.round(v.bandwidth / 1000)} kbps</td></tr>`).join('');
+    pick();
+    $('playCard').hidden = false;
+  } catch (e) { showError('获取音频流失败：' + e.message); }
+  $('btnStreams').disabled = false;
+};
+
+function pick() {
+  const key = document.querySelector('input[name=q]:checked')?.value;
+  if (key) $('player').src = '/audio/' + key;
+}
+document.addEventListener('change', e => { if (e.target.name === 'q') pick(); });
+
+$('player').addEventListener('error', () => {
+  if (!$('player').src) return;
+  showError('音频加载出错（节点不稳或地址过期）。代理会自动轮替候选 CDN；若仍失败，请重新点「获取音频流」。');
+});
+
+setInterval(async () => {
+  try {
+    const log = await post('/log');
+    if (!log.length) return;
+    $('logBody').innerHTML = log.map(l => `
+      <tr><td>${l.time}</td><td>${l.kind}</td><td>${l.host}</td><td>${l.range}</td><td>${l.status}</td><td>${fmtBytes(l.bytes)}</td></tr>`).join('');
+    $('audioBytes').textContent = fmtBytes(log.filter(l => l.kind === 'audio').reduce((s, l) => s + l.bytes, 0));
+  } catch {}
+}, 1500);
+</script>
+</body>
+</html>
