@@ -1,0 +1,24 @@
+README.md
+  s_34cee9fc3fc328::t_4eda5f4aebdc1e 158,160-161
+docs/m0-findings.md
+  s_34cee9fc3fc328::t_5f7565227be9d6 1-102
+docs/project-plan.md
+  s_34cee9fc3fc328::t_85cc686f33a6f7 172-173
+  s_34cee9fc3fc328::t_d7a0eb03754518 240-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d557353d38a61e63e8d6a3f6357d3c04f5b81ed1",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
