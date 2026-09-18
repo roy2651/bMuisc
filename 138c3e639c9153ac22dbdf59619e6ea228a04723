@@ -1,0 +1,51 @@
+docs/m0-findings.md
+  s_34cee9fc3fc328::t_5a1bf81360c6bc 53
+  s_34cee9fc3fc328::t_bd7182e38ab7ff 91-92,94
+  s_34cee9fc3fc328::t_c11a34285983a0 7-8
+  s_34cee9fc3fc328::t_e7f7fe5350a822 25-38
+  s_34cee9fc3fc328::t_8774f7bb8d1931 99,103
+src-tauri/src/proxy.rs
+  s_34cee9fc3fc328::t_ac46824f45eb36 86
+  s_34cee9fc3fc328::t_128c32723825a8 18-20
+  s_34cee9fc3fc328::t_d7cdd13801afec 94
+src/index.css
+  s_34cee9fc3fc328::t_65e04c803bde77 417
+  s_34cee9fc3fc328::t_3d9f71d9cea40d 496-502
+src-tauri/tests/live_parse.rs
+  s_34cee9fc3fc328::t_6a942a6e07501d 1-33
+src-tauri/src/bilibili.rs
+  s_34cee9fc3fc328::t_d7b0e954a44ee2 16-19
+  s_34cee9fc3fc328::t_2f2e393b5fa931 165,170-178
+  s_34cee9fc3fc328::t_d8d4731121d8f5 32
+  s_34cee9fc3fc328::t_5e31f09a1a8932 77-78
+src-tauri/src/lib.rs
+  s_34cee9fc3fc328::t_8cbda433d89f6f 1
+index.html
+  s_34cee9fc3fc328::t_45c8288f3bd4ee 6-7
+src/api.ts
+  s_34cee9fc3fc328::t_9c4b3d2b0ce1c2 17-18
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_ecd48c8f426fc7 44-45
+src/components/PlayerBar.tsx
+  s_34cee9fc3fc328::t_402608e15e55b2 79
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_cdb876b7ab3cc0 21-22
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_e988775a674ffe 595,1089-1097,1105,1119-1124,1617-1618,1620,1622-1623,1626,1628,2202-2218,2498-2541,2963,2967,2976,3080-3088,3146-3168,3387,4044-4045,4047,4049,4411-4416
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "138c3e639c9153ac22dbdf59619e6ea228a04723",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
