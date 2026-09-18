@@ -6,9 +6,10 @@ mod proxy;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            // 第二实例启动时立即退出，转由这里把已有窗口带到前台
+            // 第二实例启动时立即退出，转由这里把已有窗口带到前台（macOS 关窗后是隐藏，需要先 show）
             use tauri::Manager;
             if let Some(w) = app.get_webview_window("main") {
+                let _ = w.show();
                 let _ = w.unminimize();
                 let _ = w.set_focus();
             }
@@ -27,6 +28,19 @@ pub fn run() {
             commands::resolve_streams,
             commands::proxy_port
         ])
-        .run(tauri::generate_context!())
-        .expect("bMuisc 启动失败");
+        .build(tauri::generate_context!())
+        .expect("bMuisc 启动失败")
+        .run(|app, event| {
+            // macOS 点 Dock 图标：把隐藏的窗口重新显示（关窗只是 hide，应用仍在运行）
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                use tauri::Manager;
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (&app, &event);
+        });
 }

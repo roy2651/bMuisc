@@ -43,7 +43,11 @@ export default function NowPlaying({ track, loading, playing }: Props) {
               {track.pageLabel && track.pageLabel !== '合集' ? ` · ${track.pageLabel}` : ''}
             </p>
           )}
-          <p className="np-sub">时长 {fmtDur(track.duration)} · 来自 B 站</p>
+          {loading ? (
+            <p className="np-sub loading-line"><span className="spinner inline" />正在加载音频流…</p>
+          ) : (
+            <p className="np-sub">时长 {fmtDur(track.duration)} · 来自 B 站</p>
+          )}
           <button className="btn ghost sm" onClick={() => openUrl(`https://www.bilibili.com/video/${track.bvid}/`)}>
             <IconExternal size={15} /> 打开原页面
           </button>
