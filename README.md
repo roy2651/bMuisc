@@ -173,10 +173,10 @@ Tauri 支持多个平台，但 WebView 的媒体格式支持、后台播放、�
 
 ```bash
 npm install
-npm run tauri dev
+npm run app:dev   # 开发运行（桌面窗口 + 前端热更新）
 ```
 
-要求 Node 18+、Rust 1.88+（依赖链要求，`rustup default stable` 即可）、Windows 10+（WebView2）或 macOS。打包：`npm run tauri build`。
+要求 Node 18+、Rust 1.88+（依赖链要求，`rustup default stable` 即可）、Windows 10+（WebView2）或 macOS。打包：`npm run app:build`（Windows 出 NSIS 安装包，macOS 出 .app/.dmg）。
 
 ## 下载安装
 
