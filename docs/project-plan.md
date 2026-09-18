@@ -86,7 +86,7 @@ flowchart TD
     Controller --> Engine[媒体引擎]
     Controller --> Source[内容源适配器 / Rust Commands]
     Controller --> Storage[本地存储 / Tauri Store]
-    Source --> Bili[Bilibili 元信息与媒体解析]
+    Source --> Bili[B站 元信息与媒体解析]
     Source --> Session[临时媒体会话]
     Session --> Engine
     Platform[平台媒体控制] --> Controller
