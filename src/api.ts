@@ -14,6 +14,8 @@ export interface EpisodeInfo {
   cid: number;
   title: string;
   duration: number;
+  cover: string;
+  owner: string;
 }
 
 export interface SeasonInfo {

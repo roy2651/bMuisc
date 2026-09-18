@@ -1,4 +1,4 @@
-mod bilibili;
+pub mod bilibili; // pub 供集成测试（tests/）直接验证解析链路
 mod commands;
 mod proxy;
 

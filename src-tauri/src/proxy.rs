@@ -15,6 +15,9 @@ use std::time::Duration;
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const REFERER: &str = "https://www.bilibili.com/";
+// 风控实测（2026-09-18，详见 docs/m0-findings.md §2.1/§2.2）：媒体 CDN 与 API 规则相反——
+// 官方镜像（upos-sz-*/cn-jstz-*）**必须带 Referer**（否则 403），mcdn PCDN 节点带不带均可。
+// 拉流请求统一带 Referer。
 const CHUNK: u64 = 1024 * 1024; // 开放式 Range 分块大小：1MB
 
 struct Entry {
@@ -80,6 +83,7 @@ async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
 
     let client = reqwest::Client::builder()
         .user_agent(UA)
+        .http1_only() // 媒体 CDN 同样以 HTTP/1.1 访问，与 API 保持一致
         .timeout(Duration::from_secs(30))
         .build()
         .expect("proxy client");
@@ -87,7 +91,7 @@ async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
     for url in urls {
         let mut req = client
             .get(&url)
-            .header("Referer", REFERER)
+            .header("Referer", REFERER) // 官方 CDN 无 Referer 返回 403（§2.2）
             .timeout(Duration::from_secs(120));
         if let Some(r) = &upstream_range {
             req = req.header("Range", r);
