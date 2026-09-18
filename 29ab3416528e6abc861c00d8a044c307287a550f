@@ -1,0 +1,19 @@
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_f1b7c66a896c12 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "29ab3416528e6abc861c00d8a044c307287a550f",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
