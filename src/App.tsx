@@ -1,6 +1,8 @@
 // 应用外壳：布局、链接解析入口、错误横幅、引擎初始化与记录恢复
 
 import { useEffect, useState } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { ViewInfo } from './api';
 import { initEngine } from './engine';
 import { usePlayer } from './store';
@@ -12,12 +14,13 @@ import QueuePanel from './components/QueuePanel';
 import { IconX } from './components/icons';
 
 export default function App() {
-  const { tracks, currentId, loading, error, dismissError, restore, addTracks } = usePlayer();
+  const { tracks, currentId, loading, error, dismissError, restore, addTracks, flushSnapshot } = usePlayer();
   const [parsed, setParsed] = useState<ViewInfo | null>(null);
   const [input, setInput] = useState('');
+  const [version, setVersion] = useState('');
   const track = tracks.find((t) => t.uid === currentId) ?? null;
 
-  // 引擎初始化（代理端口就绪可能稍晚于窗口）+ 恢复上次记录
+  // 引擎初始化（代理端口就绪可能稍晚于窗口）+ 恢复上次记录 + 关窗前兜底落盘
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -31,8 +34,16 @@ export default function App() {
         }
       }
     })();
+    // 关闭窗口时最后一次快照可能还挂在 2 秒节流里，这里强制写入
+    const unListen = getCurrentWindow().onCloseRequested(() => {
+      flushSnapshot();
+    });
+    getVersion()
+      .then((v) => !cancelled && setVersion(v))
+      .catch(() => {});
     return () => {
       cancelled = true;
+      void unListen.then((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -41,7 +52,7 @@ export default function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="logo" title="bMuisc">BM</div>
-        <div className="sidebar-foot">v0.1.0</div>
+        <div className="sidebar-foot">v{version || '0.0.0'}</div>
       </aside>
 
       <div className="main">

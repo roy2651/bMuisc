@@ -3,7 +3,7 @@
 // 删除当前项选后继、清空即停止释放。
 
 import { create } from 'zustand';
-import { hooks, bindReporter, loadTrack, togglePlay, seek, setVolume, stopAndRelease } from './engine';
+import { hooks, bindReporter, hasSource, loadTrack, togglePlay, seek, setVolume, stopAndRelease } from './engine';
 
 export type LoopMode = 'order' | 'loop' | 'one' | 'random';
 
@@ -25,11 +25,12 @@ const SAVE_KEY = 'bmuisc.snapshot.v1';
 let uidSeq = 0;
 const newUid = () => `t${Date.now().toString(36)}-${(uidSeq++).toString(36)}`;
 
-function saveSnapshot(s: PlayerState) {
+function writeSnapshot(s: PlayerState) {
   const data = {
     tracks: s.tracks,
     currentId: s.currentId,
     volume: s.volume,
+    muted: s.muted,
     mode: s.mode,
     position: s.position,
     savedAt: Date.now(),
@@ -41,6 +42,25 @@ function saveSnapshot(s: PlayerState) {
   }
 }
 
+// 播放进度每秒上报多次，全量序列化大队列不能跟着这么频繁：进度类更新合并为
+// 每 2 秒落盘一次；关键动作（增删、模式、音量、暂停等）传 immediate 立即写。
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function saveSnapshot(s: PlayerState, immediate = false) {
+  if (immediate) {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    writeSnapshot(s);
+    return;
+  }
+  if (saveTimer) return; // 已有待写的合并任务
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    writeSnapshot(usePlayer.getState());
+  }, 2000);
+}
+
 export interface PlayerState {
   tracks: Track[];
   currentId: string | null;
@@ -49,6 +69,7 @@ export interface PlayerState {
   position: number;
   duration: number;
   volume: number;
+  muted: boolean; // 显式静音标志；实际音量 = muted ? 0 : volume
   mode: LoopMode;
   error: string | null;
   savedSeek: number | null; // 重启恢复：当前曲目首次加载时定位到此进度
@@ -60,10 +81,12 @@ export interface PlayerState {
   prev(): void;
   seekTo(t: number): void;
   setVolume(v: number): void;
+  toggleMute(): void;
   cycleMode(): void;
   remove(uid: string): void;
   reorder(uid: string, dir: -1 | 1): void;
   clear(): void;
+  flushSnapshot(): void; // 关窗兜底：跳过节流立即落盘
   restore(): void;
   patchMedia(patch: { playing?: boolean; loading?: boolean; position?: number; duration?: number; error?: string | null }): void;
   dismissError(): void;
@@ -88,6 +111,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     position: 0,
     duration: 0,
     volume: 0.8,
+    muted: false,
     mode: 'order',
     error: null,
     savedSeek: null,
@@ -99,7 +123,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       if (playNow && tracks.length > 0) {
         startTrack(get().tracks.length - tracks.length);
       }
-      saveSnapshot(get());
+      saveSnapshot(get(), true);
     },
 
     playAt(uid) {
@@ -108,12 +132,20 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     toggle() {
-      const { currentId, tracks, playing } = get();
-      if (!currentId && tracks.length > 0) {
-        startTrack(0);
+      const { currentId, tracks, playing, savedSeek } = get();
+      if (!currentId) {
+        if (tracks.length > 0) startTrack(0);
         return;
       }
-      if (playing) saveSnapshot(get());
+      // 重启恢复的会话：媒体尚未加载（audio 无源），点播放即从记录进度继续
+      if (!playing && !hasSource()) {
+        const index = tracks.findIndex((t) => t.uid === currentId);
+        if (index >= 0) {
+          startTrack(index, savedSeek ?? 0);
+          return;
+        }
+      }
+      if (playing) saveSnapshot(get(), true);
       togglePlay();
     },
 
@@ -139,7 +171,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
         if (auto && mode === 'order') {
           stopAndRelease(); // 顺序播放到队尾：停止并释放
           set({ currentId: null });
-          saveSnapshot(get());
+          saveSnapshot(get(), true);
           return;
         }
         next = 0; // 列表循环回到第一项；用户手动切歌也回绕
@@ -161,16 +193,23 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     setVolume(v) {
-      set({ volume: v });
-      setVolume(v);
-      saveSnapshot(get());
+      set({ volume: v, muted: v > 0 ? false : get().muted }); // 拖动即解除静音
+      setVolume(get().muted ? 0 : v);
+      saveSnapshot(get(), true);
+    },
+
+    toggleMute() {
+      const muted = !get().muted;
+      set({ muted });
+      setVolume(muted ? 0 : get().volume);
+      saveSnapshot(get(), true);
     },
 
     cycleMode() {
       const { mode } = get();
       const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
       set({ mode: next });
-      saveSnapshot(get());
+      saveSnapshot(get(), true);
     },
 
     remove(uid) {
@@ -180,14 +219,14 @@ export const usePlayer = create<PlayerState>((set, get) => {
       const remaining = tracks.filter((t) => t.uid !== uid);
       if (uid !== currentId) {
         set({ tracks: remaining });
-        saveSnapshot(get());
+        saveSnapshot(get(), true);
         return;
       }
       // 删除当前播放项：选其后继；没有后继则选剩余第一项。此前暂停则保持暂停。
       stopAndRelease();
       if (remaining.length === 0) {
         set({ tracks: remaining, currentId: null, position: 0, duration: 0 });
-        saveSnapshot(get());
+        saveSnapshot(get(), true);
         return;
       }
       const nextIndex = Math.min(index, remaining.length - 1);
@@ -199,7 +238,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
         // 保持暂停：仅记录新当前项，加载留到用户点播放（savedSeek=0 从头）
         set({ savedSeek: 0 });
       }
-      saveSnapshot(get());
+      saveSnapshot(get(), true);
     },
 
     reorder(uid, dir) {
@@ -210,13 +249,17 @@ export const usePlayer = create<PlayerState>((set, get) => {
       const next = [...tracks];
       [next[i], next[j]] = [next[j], next[i]];
       set({ tracks: next }); // 排序不改变当前播放项
-      saveSnapshot(get());
+      saveSnapshot(get(), true);
     },
 
     clear() {
       stopAndRelease();
       set({ tracks: [], currentId: null, position: 0, duration: 0 });
-      saveSnapshot(get());
+      saveSnapshot(get(), true);
+    },
+
+    flushSnapshot() {
+      saveSnapshot(get(), true);
     },
 
     restore() {
@@ -226,14 +269,15 @@ export const usePlayer = create<PlayerState>((set, get) => {
         const data = JSON.parse(raw) as Partial<PlayerState>;
         const tracks = Array.isArray(data.tracks) ? data.tracks : [];
         const volume = typeof data.volume === 'number' ? data.volume : 0.8;
+        const muted = data.muted === true;
         const mode = MODES.includes(data.mode as LoopMode) ? (data.mode as LoopMode) : 'order';
-        setVolume(volume);
+        setVolume(muted ? 0 : volume);
         if (tracks.length === 0) {
-          set({ volume, mode });
+          set({ volume, muted, mode });
           return;
         }
         const currentId = tracks.some((t) => t.uid === data.currentId) ? data.currentId! : null;
-        set({ tracks, volume, mode, currentId, savedSeek: currentId ? data.position ?? 0 : null });
+        set({ tracks, volume, muted, mode, currentId, savedSeek: currentId ? data.position ?? 0 : null });
       } catch {
         /* 记录损坏不阻止启动 */
       }
@@ -243,12 +287,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
       const s = get();
       set(patch as Partial<PlayerState>);
       if (patch.error != null) return; // 出错状态不覆盖快照
-      if (
-        patch.position !== undefined ||
-        patch.playing !== undefined ||
-        patch.duration !== undefined
-      ) {
-        saveSnapshot({ ...s, ...patch } as PlayerState);
+      if (patch.playing !== undefined) {
+        saveSnapshot({ ...s, ...patch } as PlayerState, true); // 播放/暂停立即落盘，关窗不丢
+      } else if (patch.position !== undefined || patch.duration !== undefined) {
+        saveSnapshot({ ...s, ...patch } as PlayerState); // 进度类走 2 秒节流
       }
     },
 
