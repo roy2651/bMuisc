@@ -76,6 +76,7 @@ export default function PlayerBar() {
             onChange={(e) => setVolume(Number(e.target.value) / 100)}
             aria-label="音量"
           />
+          <span className="vol-pct">{Math.round(volume * 100)}%</span>
         </div>
       </div>
     </footer>

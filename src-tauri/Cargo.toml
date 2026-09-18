@@ -18,7 +18,8 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 regex = "1"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+# TLS 必须用 native-tls（Windows=Schannel）：B 站 WAF 拦截 rustls 指纹（详见 docs/m0-findings.md §2.1）
+reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json", "stream"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 axum = { version = "0.8", features = ["http1"] }
 

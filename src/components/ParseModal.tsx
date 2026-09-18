@@ -41,8 +41,8 @@ export default function ParseModal({ view, onClose, onConfirm }: Props) {
         bvid: e.bvid,
         cid: e.cid,
         title: e.title,
-        up: view.owner,
-        cover: view.cover,
+        up: e.owner || view.owner,
+        cover: e.cover || view.cover,
         duration: e.duration,
         pageLabel: '合集',
       }));

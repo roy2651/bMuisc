@@ -414,6 +414,7 @@ body {
 .play-btn:disabled { opacity: 0.45; cursor: default; }
 
 .pb-volume { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; color: var(--text2); }
+.pb-volume .vol-pct { font-size: 11px; color: var(--text2); min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- 滑杆 ---------- */
 
@@ -492,8 +493,13 @@ body {
 }
 .modal-tabs button.on { background: rgba(251, 114, 153, 0.14); border-color: rgba(251, 114, 153, 0.5); color: #ffc2d5; }
 .modal-tabs .tab-actions { margin-left: auto; display: flex; gap: 6px; }
-.modal-tabs .tab-actions button { border: none; color: var(--text3); padding: 6px 8px; }
-.modal-tabs .tab-actions button:hover { color: var(--text); }
+.modal-tabs .tab-actions button {
+  border: 1px solid rgba(251, 114, 153, 0.35);
+  color: var(--text2);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.modal-tabs .tab-actions button:hover { color: #ffc2d5; border-color: rgba(251, 114, 153, 0.7); }
 
 .modal-list { overflow-y: auto; min-height: 120px; max-height: 320px; border: 1px solid var(--line); border-radius: 12px; padding: 6px; }
 

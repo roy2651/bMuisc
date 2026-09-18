@@ -7,13 +7,16 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
-const REFERER: &str = "https://www.bilibili.com/";
 
 fn client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
             .user_agent(UA)
+            // WAF 实测（2026-09-18，详见 docs/m0-findings.md §2.1）：api.bilibili.com
+            // 会拦截「Referer=www.bilibili.com 但非浏览器指纹」的请求，返回 HTML 错误页。
+            // demo（undici）能匿名直调正是因为全程只带 UA、不带 Referer。
+            .http1_only() // HTTP/2 同样被拦（curl A/B 实测），固定 HTTP/1.1
             .timeout(Duration::from_secs(15))
             .build()
             .expect("reqwest client")
@@ -26,7 +29,7 @@ async fn bili_json(url: &str) -> Result<serde_json::Value, String> {
     for i in 1..=4 {
         let resp = client()
             .get(url)
-            .header("Referer", REFERER)
+            // 注意：不要加 Referer——带 Referer 的非浏览器请求会被 WAF 拦截（§2.1）
             .send()
             .await
             .map_err(|e| format!("网络请求失败: {e}"))?;
@@ -71,6 +74,8 @@ pub struct EpisodeInfo {
     pub cid: u64,
     pub title: String,
     pub duration: u64,
+    pub cover: String,
+    pub owner: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -157,11 +162,20 @@ pub async fn view(bvid: &str) -> Result<ViewInfo, String> {
                     .filter_map(|e| {
                         let bvid = e["bvid"].as_str()?.to_string();
                         let cid = e["cid"].as_u64()?;
+                        // 各集自己的元数据在 arc 子对象里（episodes 顶层没有 duration/pic/owner）
                         Some(EpisodeInfo {
                             bvid,
                             cid,
                             title: e["title"].as_str().unwrap_or("未命名").to_string(),
-                            duration: e["duration"].as_u64().unwrap_or(0),
+                            duration: e["arc"]["duration"]
+                                .as_u64()
+                                .or_else(|| e["duration"].as_u64())
+                                .unwrap_or(0),
+                            cover: e["arc"]["pic"]
+                                .as_str()
+                                .unwrap_or_default()
+                                .replacen("http:", "https:", 1),
+                            owner: e["arc"]["owner"]["name"].as_str().unwrap_or_default().to_string(),
                         })
                     })
                     .collect()

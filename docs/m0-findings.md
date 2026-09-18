@@ -4,8 +4,8 @@
 
 ## 1. 验证环境与方法
 
-- 日期：2026-09-17
-- 环境：Windows 10（19045）；Node.js 22.20（undici fetch）与 curl 8.12.1（mingw64，Schannel TLS）
+- 日期：2026-09-17（首轮）、2026-09-18（WAF 行为复测 + reqwest 实测）
+- 环境：Windows 10（19045）；Node.js 22.20（undici fetch）、curl 8.12.1（mingw64，Schannel TLS）、reqwest 0.12（rustls / native-tls 两种配置均测）
 - 测试样本：`BV1cLeE6yE9R`（LE SSERAFIM 'Made My Night' Dance Practice，单 P，约 2 分钟）
 - 访问方式：全程匿名，无 cookie、无 WBI 签名、无登录凭据
 
@@ -22,6 +22,20 @@
 
 - 请求仅需 `User-Agent` 头；未要求 WBI 签名或 cookie（当前时点）。
 - 存在**概率性 -400（请求错误）**：相同请求偶发被拒，间隔重试即可恢复。调用方应内置有限次重试，不可将单次 -400 视为永久拒绝。
+
+**2026-09-18 WAF 行为实测（重要修正）**——API 风控按请求形态拦截，命中即返回 HTTP 200 + HTML 错误页（`<title>出错啦!</title>`）而非 JSON：
+
+| 请求形态 | 结果 |
+| --- | --- |
+| HTTP/1.1 + 仅 UA | ✅ 通过 |
+| HTTP/1.1 + UA + `Referer: https://www.bilibili.com/` | ❌ HTML 错误页 |
+| HTTP/2（curl 默认 ALPN 协商） | ❌ HTML 错误页（各头组合均拦） |
+| HTTP/1.1 + UA + Referer + 真/假 buvid3 cookie | ❌ HTML 错误页（cookie 救不了） |
+
+1. **`Referer: www.bilibili.com` 是最强触发器**：WAF 将「自称来自 B 站页面但非浏览器指纹」的请求判为伪造直接拦截。demo（undici）能匿名直调正是因为全程只带 UA。
+2. HTTP/2 同样被拦（同 TLS 栈下 h1.1 过、h2 不过的 A/B 实测），需强制 HTTP/1.1。
+3. **匿名通过的最终配置 = HTTP/1.1 + 仅 `User-Agent`，不加 Referer、不加 cookie。** 对 reqwest 即 `ClientBuilder::http1_only()` + 只设 UA；TLS 栈 rustls/native-tls 均可（实测两者在此配置下都通过）。
+4. 判别特征：接口返回 `resp.json()` 解析失败（"error decoding response body"）而 URL 无误时，先怀疑拿到了 HTML 拦截页，再怀疑参数错误。
 - 诊断建议：遇到 -400 先核对请求参数本身（如 bvid 是否有效），再怀疑风控——本次排查中部分 -400 实为查询了无效 `bvid=-`。
 
 ### 2.2 独立音频流可用（产品核心前提成立）
@@ -36,7 +50,7 @@ playurl（fnval=16）返回 DASH `dash.audio` 数组，样本含 3 档独立音�
 
 - 容器为 fMP4/M4A（响应体第 4–8 字节为 `ftyp` 魔数）。
 - 音轨 id 与音质档位的对应（业界通用映射，与两次实测一致）：`30216` = 64 kbps 档、`30232` = 132 kbps 档、`30280` = 192 kbps 档；响应中的 `bandwidth` 是该视频的实测平均码率，可能低于档位标称值，**标记音质应以 id 为准**。杜比（30250）与 Hi-Res（30251）需大会员，匿名不会下发。
-- 仅带 `User-Agent` 的 Range 请求返回 **206**，流可直接拉取，未要求 Referer。
+- 仅带 `User-Agent` 的 Range 请求返回 **206**，流可直接拉取，未要求 Referer。2026-09-18 复测：媒体 CDN 对 `Referer` **不敏感**（带/不带均 206），与 API 的 WAF 行为（带 Referer 反被拦）不同；代理统一只带 UA 的最小配置。
 - 响应中音频流的 `size` 字段为 0（未提供），总大小需由 bandwidth × 时长估算，或经 HEAD / Content-Range 获取。
 - 音频档位未受未登录限制；对比之下视频轨匿名上限为 480P（见 2.3）。
 
@@ -74,19 +88,19 @@ playurl（fnval=16）返回 DASH `dash.audio` 数组，样本含 3 档独立音�
 | 将流地址直接交给 WebView 播放 | 不可行；统一经本地代理转发 |
 | 代理直接透传浏览器的开放式 Range | 开放式 Range（`bytes=N-`）在代理内切成有界分块（1MB），保证拿到 206；上游失败自动轮替候选地址，官方镜像优先 |
 | 使用解析返回的首个流地址（baseUrl） | 注册 baseUrl + 全部 `backupUrl` 候选并按稳定性排序；PCDN 节点仅作回退 |
+| API 请求带 Referer 更"像浏览器"、更安全 | **相反**：带 Referer 的非浏览器请求被 WAF 拦截；匿名请求只带 UA + HTTP/1.1 |
+| reqwest 默认配置可直接调用 | 需 `http1_only()`（h2 被拦）且**不得**附加 Referer；TLS 栈不限（rustls/native-tls 均实测通过） |
 
-上述结论的最小实现见仓库 `demo/` 目录（API 直调 + 注册表代理 + 分块与候选轮替），可作为 M1 媒体引擎的参考起点。
-
-尚未验证：Rust 侧 HTTP 客户端（reqwest）是否同样通过风控（本次 undici 与 curl 均通过）。若 reqwest 被拦，再评估模拟浏览器 TLS 或在 WebView 内发起请求。
+上述结论的最小实现见仓库 `demo/` 目录（API 直调 + 注册表代理 + 分块与候选轮替），可作为 M1 媒体引擎的参考起点。桌面端的对应实现在 `src-tauri/src/bilibili.rs`（`http1_only` + 仅 UA），并有实网冒烟测试 `src-tauri/tests/live_parse.rs`（`cargo test --test live_parse`，依赖外网与接口可用性）。
 
 ## 4. M0 剩余验证项
 
 - [ ] 多分 P 视频的元信息与各分 P cid 解析
-- [ ] 临时流地址有效期（实测过期时间与刷新方式）
+- [x] 临时流地址有效期——粗实测**很短**：约 25 分钟前解析的 URL 已 403（2026-09-18）。精确时长待测，但"每次播放前重新解析"已是既定架构（代理 502 文案与前端流程均按此设计）
 - [ ] WebView2 内 `<audio>` 实播：加载、seek、音质档位选择
 - [ ] 音频模式网络核验：经代理日志确认零视频流量
 - [ ] 音视频切换：进度对齐、无双重声音、失败回退音频
-- [ ] reqwest 风控通过性
+- [x] reqwest 风控通过性——通过（2026-09-18，`http1_only` + 仅 UA 配置，见 §2.1 与 `tests/live_parse.rs`）
 - [ ] 长视频 seek 缓冲表现
 
 ## 5. 附录：复现步骤
