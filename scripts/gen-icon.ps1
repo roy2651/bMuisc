@@ -1,4 +1,5 @@
-# App icon source PNG: 512x512, pink-purple gradient rounded square + white bold "BM" (bilibili music)
+# App icon source PNG: 512x512, pink-purple gradient rounded square + white bold "BM" letters.
+# NOTE: this script must stay pure ASCII (PowerShell 5.1 reads no-BOM files as ANSI/GBK).
 # NOTE: keep this file ASCII-only. PowerShell 5.1 reads no-BOM files as ANSI,
 # and UTF-8 Chinese comments silently corrupt parsing of later statements.
 Add-Type -AssemblyName System.Drawing
