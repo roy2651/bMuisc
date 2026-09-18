@@ -69,5 +69,4 @@ Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# npm lockfile 不入库（Cargo.lock 仍跟踪，保证 Rust 依赖可复现）
-package-lock.json
+# 依赖 lockfile 入库，保证本地与 CI 构建可复现（package-lock.json / Cargo.lock）
