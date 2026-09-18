@@ -1,0 +1,20 @@
+.github/workflows/release.yml
+  s_34cee9fc3fc328::t_3d98de9765b4fa 1-43,46-49
+  s_34cee9fc3fc328::t_14325e6a9f345a 44-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e1358ff59b58c7db470e9f41219edec46bd372c9",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
