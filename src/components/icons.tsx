@@ -49,6 +49,13 @@ export const IconVolume = ({ size }: IconProps) => (
   </svg>
 );
 
+export const IconVolumeMuted = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M11 5 6.5 8.5H3.5a.8.8 0 0 0-.8.8v5.4c0 .44.36.8.8.8h3L11 19z" fill="currentColor" stroke="none" />
+    <path d="m15 9.5 5.5 5.5M20.5 9.5 15 15" />
+  </svg>
+);
+
 export const IconOrder = ({ size }: IconProps) => (
   <svg {...base(size)}>
     <path d="M4 7h11M4 12h8M4 17h11" />

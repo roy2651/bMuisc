@@ -415,6 +415,8 @@ body {
 
 .pb-volume { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; color: var(--text2); }
 .pb-volume .vol-pct { font-size: 11px; color: var(--text2); min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+.pb-volume .vol-btn { width: 28px; height: 28px; padding: 0; flex: none; color: var(--text2); }
+.pb-volume .vol-btn:hover { color: var(--text); }
 
 /* ---------- 滑杆 ---------- */
 

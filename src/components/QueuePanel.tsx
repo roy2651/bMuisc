@@ -1,5 +1,6 @@
-// 播放队列：当前项标记、点击播放、移除、清空、排序（上移/下移）
+// 播放队列：当前项标记、点击播放、移除、清空（两段式确认）、排序（上移/下移）
 
+import { useEffect, useState } from 'react';
 import { usePlayer, type Track } from '../store';
 import { fmtDur } from '../util';
 import { IconArrowDown, IconArrowUp, IconMusic, IconTrash, IconX } from './icons';
@@ -14,15 +15,34 @@ function EqBars() {
 
 export default function QueuePanel() {
   const { tracks, currentId, playing, playAt, remove, reorder, clear } = usePlayer();
+  const [confirmClear, setConfirmClear] = useState(false);
   const current = tracks.find((t) => t.uid === currentId) ?? null;
+
+  // 确认态 3 秒无操作自动还原，避免停在待确认状态
+  useEffect(() => {
+    if (!confirmClear) return;
+    const t = setTimeout(() => setConfirmClear(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmClear]);
 
   return (
     <aside className="queue">
       <header className="queue-head">
         <h3>播放队列 <span className="count">{tracks.length}</span></h3>
         {tracks.length > 0 && (
-          <button className="btn ghost sm" onClick={clear} title="清空队列">
-            <IconTrash size={14} /> 清空
+          <button
+            className={`btn ghost sm${confirmClear ? ' danger' : ''}`}
+            onClick={() => {
+              if (!confirmClear) {
+                setConfirmClear(true);
+                return;
+              }
+              setConfirmClear(false);
+              clear();
+            }}
+            title={confirmClear ? '再次点击确认清空' : '清空队列'}
+          >
+            <IconTrash size={14} /> {confirmClear ? '确认清空？' : '清空'}
           </button>
         )}
       </header>

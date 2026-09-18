@@ -84,6 +84,10 @@ export function togglePlay() {
   else audio.pause();
 }
 
+export function hasSource(): boolean {
+  return !!(audio && audio.src); // 重启恢复后 audio 尚未加载，播放前需据此判断
+}
+
 export function seek(t: number) {
   if (audio && audio.src && isFinite(t)) audio.currentTime = t;
 }

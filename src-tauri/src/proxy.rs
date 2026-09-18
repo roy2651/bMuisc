@@ -30,6 +30,11 @@ fn registry() -> &'static Mutex<HashMap<String, Entry>> {
     REG.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+// 锁持有方 panic 后其余线程照常工作，不因锁中毒连锁 panic
+fn lock_registry() -> std::sync::MutexGuard<'static, HashMap<String, Entry>> {
+    registry().lock().unwrap_or_else(|p| p.into_inner())
+}
+
 static SEQ: AtomicU64 = AtomicU64::new(0);
 static PORT: OnceLock<u16> = OnceLock::new();
 
@@ -44,10 +49,7 @@ pub fn register(mut urls: Vec<String>, kind: &'static str) -> String {
     urls.sort_by_key(|u| !is_official(u)); // 稳定的官方 CDN 排前
     urls.dedup();
     let key = format!("s{}", SEQ.fetch_add(1, Ordering::Relaxed) + 1);
-    registry()
-        .lock()
-        .unwrap()
-        .insert(key.clone(), Entry { urls, _kind: kind });
+    lock_registry().insert(key.clone(), Entry { urls, _kind: kind });
     key
 }
 
@@ -68,7 +70,7 @@ fn normalize_range(range: Option<&str>) -> Option<String> {
 }
 
 async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
-    let entry = registry().lock().unwrap().get(&key).map(|e| e.urls.clone());
+    let entry = lock_registry().get(&key).map(|e| e.urls.clone());
     let urls = match entry {
         Some(u) => u,
         None => {

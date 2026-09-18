@@ -2,7 +2,7 @@
 
 import { usePlayer, MODE_TEXT } from '../store';
 import { fmtDur } from '../util';
-import { IconLoop, IconNext, IconOne, IconOrder, IconPause, IconPlay, IconPrev, IconRandom, IconVolume } from './icons';
+import { IconLoop, IconNext, IconOne, IconOrder, IconPause, IconPlay, IconPrev, IconRandom, IconVolume, IconVolumeMuted } from './icons';
 
 function ModeIcon() {
   const mode = usePlayer((s) => s.mode);
@@ -13,11 +13,12 @@ function ModeIcon() {
 }
 
 export default function PlayerBar() {
-  const { currentId, tracks, playing, loading, position, duration, volume, mode, toggle, next, prev, seekTo, setVolume, cycleMode } =
+  const { currentId, tracks, playing, loading, position, duration, volume, muted, mode, toggle, next, prev, seekTo, setVolume, toggleMute, cycleMode } =
     usePlayer();
   const track = tracks.find((t) => t.uid === currentId) ?? null;
   const total = duration || track?.duration || 0;
   const progress = total > 0 ? Math.min(100, (position / total) * 100) : 0;
+  const effective = muted ? 0 : volume; // 实际生效音量：显示与之一致
 
   return (
     <footer className="playerbar">
@@ -65,18 +66,25 @@ export default function PlayerBar() {
           </button>
         </div>
         <div className="pb-volume">
-          <IconVolume />
+          <button
+            className="icon-btn vol-btn"
+            onClick={toggleMute}
+            title={muted ? '取消静音' : '静音'}
+            aria-label={muted ? '取消静音' : '静音'}
+          >
+            {effective === 0 ? <IconVolumeMuted /> : <IconVolume />}
+          </button>
           <input
             className="slider vol"
             type="range"
             min={0}
             max={100}
-            value={Math.round(volume * 100)}
-            style={{ ['--val' as string]: `${volume * 100}%` }}
+            value={Math.round(effective * 100)}
+            style={{ ['--val' as string]: `${effective * 100}%` }}
             onChange={(e) => setVolume(Number(e.target.value) / 100)}
             aria-label="音量"
           />
-          <span className="vol-pct">{Math.round(volume * 100)}%</span>
+          <span className="vol-pct">{Math.round(effective * 100)}%</span>
         </div>
       </div>
     </footer>
