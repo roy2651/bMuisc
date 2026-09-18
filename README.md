@@ -175,6 +175,22 @@ npm run tauri dev
 
 要求 Node 18+、Rust 工具链、Windows 10+（WebView2）。打包：`npm run tauri build`。
 
+## 下载安装
+
+到 [Releases](https://github.com/roy2651/bMuisc/releases) 下载对应平台的安装包：
+
+| 平台 | 文件 | 说明 |
+| --- | --- | --- |
+| Windows 10+ | `*-x64-setup.exe` | 直接运行安装 |
+| macOS（Apple Silicon） | `*-aarch64.dmg` | M 系列芯片 |
+| macOS（Intel） | `*-x64.dmg` | Intel 芯片 |
+
+**macOS 首次打开说明**：安装包未做 Apple 公证（无开发者账号），首次打开会被系统拦截。按以下任一方式放行：
+
+1. **系统设置 → 隐私与安全性**：先尝试打开应用一次，被拦截后进入该设置页，滚到底部会提示「已阻止…因为来自身份不明的开发者」，点击**「仍要打开」**即可（推荐，各版本系统通用）；
+2. 终端执行：`xattr -cr /Applications/bMuisc.app`（清除隔离标记，若提示「应用已损坏」用这条解决）；
+3. 较旧系统（macOS 13/14）也可在访达中**右键点击应用 → 打开 → 再点「打开」**。
+
 ## 主要约束
 
 - B 站接口、访问要求和媒体地址策略可能变化，内容源适配器需要持续维护。
