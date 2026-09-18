@@ -1,6 +1,9 @@
 # 发版流程：推送 v* 标签（或在 GitHub 网页上发布 Release）自动触发，
-# 在线构建 Windows 安装包（NSIS），产物自动挂到对应 Release。
-# 手动触发（workflow_dispatch）仅构建校验，不出包到 Release。
+# 并行构建 Windows（NSIS 安装包）与 macOS（Apple Silicon，app + dmg），
+# 产物自动挂到对应 Release。手动触发（workflow_dispatch）仅构建校验，不出包。
+#
+# 注意：macOS 包未做 Apple 签名公证，用户首次打开需右键 → 打开（或
+# `xattr -cr /Applications/bMuisc.app` 移除隔离标记），否则 Gatekeeper 拦截。
 
 name: Release
 
@@ -44,6 +47,47 @@ jobs:
           # 仅在 tag 触发时发布 Release；手动触发（分支 ref）tagName 为空 = 只构建校验
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: 'bMuisc ${{ github.ref_name }}'
-          releaseBody: 'Windows 安装包（NSIS）。首次构建版本的已知限制见 README。'
+          releaseBody: 'Windows 安装包（NSIS）+ macOS 包（Apple Silicon，未签名：首次打开请右键 → 打开）。'
           releaseDraft: false
           prerelease: false
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin # Apple Silicon（M 系列）
+          - target: x86_64-apple-darwin # Intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build app and attach to Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: 'bMuisc ${{ github.ref_name }}'
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.target }}
