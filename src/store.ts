@@ -3,7 +3,7 @@
 // 删除当前项选后继、清空即停止释放。
 
 import { create } from 'zustand';
-import { hooks, bindReporter, hasSource, loadTrack, togglePlay, seek, setVolume, stopAndRelease } from './engine';
+import { hooks, bindReporter, hasSource, loadTrack, prefetchTrack, getPrefetched, togglePlay, seek, setVolume, stopAndRelease } from './engine';
 
 export type LoopMode = 'order' | 'loop' | 'one' | 'random';
 
@@ -96,14 +96,33 @@ export interface PlayerState {
 }
 
 export const usePlayer = create<PlayerState>((set, get) => {
+  // 开播成功后按循环模式预解析并预缓冲下一首，切歌/自动接续时近乎零等待；
+  // 预取失败静默，切歌时引擎走常规解析兜底。
+  function schedulePrefetch() {
+    const { tracks, mode, currentId } = get();
+    const idx = tracks.findIndex((t) => t.uid === currentId);
+    if (idx < 0) return;
+    let target: Track | undefined;
+    if (mode === 'one') return; // 同曲重播：引擎直接定位回 0，无需预取
+    if (mode === 'random') {
+      const cands = tracks.filter((t) => t.uid !== currentId);
+      target = cands.length > 0 ? cands[Math.floor(Math.random() * cands.length)] : undefined;
+    } else {
+      target = tracks[(idx + 1) % tracks.length]; // 含回绕：列表循环自动接续 + 手动下一首都可能命中
+    }
+    if (target) void prefetchTrack(target.bvid, target.cid);
+  }
+
   function startTrack(index: number, seekTo?: number) {
     const { tracks } = get();
     const track = tracks[index];
     if (!track) return;
     set({ currentId: track.uid, error: null, position: seekTo ?? 0 });
-    loadTrack(track.bvid, track.cid, seekTo).catch(() => {
-      /* 错误已由引擎上报到 error 状态 */
-    });
+    loadTrack(track.bvid, track.cid, seekTo)
+      .then(() => schedulePrefetch())
+      .catch(() => {
+        /* 错误已由引擎上报到 error 状态 */
+      });
   }
 
   return {
@@ -162,6 +181,14 @@ export const usePlayer = create<PlayerState>((set, get) => {
         return;
       }
       if (mode === 'random') {
+        // 复用预取时定好的随机结果：手动/自动切歌都命中秒开路径
+        //（随机模式"下一首是哪首"在预取时已随机好，提前定和现场定无感知差异）
+        const pf = getPrefetched();
+        const hinted = pf ? tracks.findIndex((t) => t.bvid === pf.bvid && t.cid === pf.cid) : -1;
+        if (hinted >= 0 && tracks[hinted].uid !== currentId) {
+          startTrack(hinted);
+          return;
+        }
         const candidates = tracks.map((_, i) => i).filter((i) => tracks[i].uid !== currentId);
         if (candidates.length === 0) {
           startTrack(0, 0);

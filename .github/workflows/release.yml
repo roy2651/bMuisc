@@ -37,7 +37,7 @@ jobs:
           workspaces: src-tauri
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build app and attach to Release
         uses: tauri-apps/tauri-action@v0
@@ -79,7 +79,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build app and attach to Release
         uses: tauri-apps/tauri-action@v0

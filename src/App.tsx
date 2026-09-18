@@ -34,9 +34,15 @@ export default function App() {
         }
       }
     })();
-    // 关闭窗口时最后一次快照可能还挂在 2 秒节流里，这里强制写入
-    const unListen = getCurrentWindow().onCloseRequested(() => {
+    // macOS：关窗仅隐藏窗口（后台继续播放），退出只走 Dock 右键 / Cmd+Q；
+    // 其他平台关窗即退出。关闭前强制落盘，最后一次快照可能还挂在 2 秒节流里。
+    const isMac = /Mac/i.test(navigator.userAgent);
+    const unListen = getCurrentWindow().onCloseRequested(async (event) => {
       flushSnapshot();
+      if (isMac) {
+        event.preventDefault();
+        await getCurrentWindow().hide();
+      }
     });
     getVersion()
       .then((v) => !cancelled && setVersion(v))
