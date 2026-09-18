@@ -1,0 +1,28 @@
+.github/workflows/release.yml
+  s_34cee9fc3fc328::t_21439ff2662bd7 55-60,72-73,79,93
+  s_34cee9fc3fc328::t_0c4c4767482d56 2-6,50,53-54,61-71,74-78,80-90
+  s_34cee9fc3fc328::t_b3de4f0a761d16 91-92
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_1b1fd29ec1ea02 29
+  s_34cee9fc3fc328::t_6b925c09f3d535 30-36,38-39
+  s_34cee9fc3fc328::t_77f28399d6a7ba 37,40
+README.md
+  s_34cee9fc3fc328::t_c0f5ee4d86d264 178-187,193
+  s_34cee9fc3fc328::t_dbdf457a34cc05 188-192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "78e289bd82772fa3a28fad5eb5c5ce51f0060f84",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
