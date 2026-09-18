@@ -11,11 +11,12 @@ export interface Track {
   uid: string; // 队列条目 ID，与视频标识分离，重复添加仍可独立排序删除
   bvid: string;
   cid: number;
-  title: string;
+  title: string; // 歌名优先：分 P 用 part 标题，合集用单集标题
   up: string;
   cover: string;
   duration: number;
-  pageLabel?: string; // 分 P 标注（合集集数 / P 序号）
+  pageLabel?: string; // 短标注（P8 / 合集），完整来源放 source
+  source?: string; // 所属视频 / 合集标题，次级信息用
 }
 
 const MODES: LoopMode[] = ['order', 'loop', 'one', 'random'];
@@ -73,6 +74,7 @@ export interface PlayerState {
   mode: LoopMode;
   error: string | null;
   savedSeek: number | null; // 重启恢复：当前曲目首次加载时定位到此进度
+  clearedBackup: { tracks: Track[]; currentId: string | null } | null; // 清空撤销用，不落盘
 
   addTracks(tracks: Omit<Track, 'uid'>[], playNow: boolean): void;
   playAt(uid: string): void;
@@ -86,6 +88,7 @@ export interface PlayerState {
   remove(uid: string): void;
   reorder(uid: string, dir: -1 | 1): void;
   clear(): void;
+  undoClear(): void;
   flushSnapshot(): void; // 关窗兜底：跳过节流立即落盘
   restore(): void;
   patchMedia(patch: { playing?: boolean; loading?: boolean; position?: number; duration?: number; error?: string | null }): void;
@@ -115,11 +118,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
     mode: 'order',
     error: null,
     savedSeek: null,
+    clearedBackup: null,
 
     addTracks(items, playNow) {
       const tracks = items.map((t) => ({ ...t, uid: newUid() }));
       const { tracks: old } = get();
-      set({ tracks: [...old, ...tracks] });
+      set({ tracks: [...old, ...tracks], clearedBackup: null }); // 新内容进来后撤销已无意义
       if (playNow && tracks.length > 0) {
         startTrack(get().tracks.length - tracks.length);
       }
@@ -253,8 +257,21 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     clear() {
+      const { tracks, currentId } = get();
+      if (tracks.length === 0) return;
       stopAndRelease();
-      set({ tracks: [], currentId: null, position: 0, duration: 0 });
+      set({ tracks: [], currentId: null, position: 0, duration: 0, clearedBackup: { tracks, currentId } });
+      // 5 秒后撤销机会自动过期，备份释放
+      setTimeout(() => {
+        if (get().clearedBackup?.tracks === tracks) set({ clearedBackup: null });
+      }, 5000);
+      saveSnapshot(get(), true);
+    },
+
+    undoClear() {
+      const backup = get().clearedBackup;
+      if (!backup) return;
+      set({ tracks: backup.tracks, currentId: backup.currentId, clearedBackup: null });
       saveSnapshot(get(), true);
     },
 

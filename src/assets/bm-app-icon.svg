@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
+<title>bMusic — bm monogram</title>
+<desc>Rounded white b and rhythmic m on a pink-to-violet app tile.</desc>
+<defs><linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F36AA1"/><stop offset="1" stop-color="#AD65DC"/></linearGradient></defs>
+<rect x="16" y="16" width="480" height="480" rx="112" fill="url(#brand)"/>
+<g fill="none" stroke="white" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M128 170V282C128 316 151 338 184 338C219 338 242 313 242 281C242 248 219 226 186 226C153 226 128 250 128 282"/>
+  <path d="M284 326V255C284 235 297 223 315 223C334 223 347 235 347 255V326M347 255C347 235 360 223 378 223C397 223 410 235 410 255V326"/>
+</g>
+</svg>

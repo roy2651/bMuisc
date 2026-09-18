@@ -52,7 +52,7 @@ export default function PlayerBar() {
           )}
         </div>
         <div className="pb-controls">
-          <button className="icon-btn" onClick={cycleMode} title={MODE_TEXT[mode]}>
+          <button className={`icon-btn${mode !== 'order' ? ' mode-on' : ''}`} onClick={cycleMode} title={MODE_TEXT[mode]} aria-label={MODE_TEXT[mode]}>
             <ModeIcon />
           </button>
           <button className="icon-btn" onClick={prev} disabled={!track} title="上一首">

@@ -111,6 +111,8 @@ async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
         let headers = resp.headers_mut().unwrap();
         headers.insert("accept-ranges", "bytes".parse().unwrap());
         headers.insert("cache-control", "no-store".parse().unwrap());
+        // 允许 WebView 前端以 crossorigin 方式拉流，供 WebAudio 频谱分析（仅本机回环）
+        headers.insert("access-control-allow-origin", "*".parse().unwrap());
         if let Some(ct) = up.headers().get("content-type") {
             headers.insert("content-type", ct.clone());
         } else {
@@ -131,8 +133,21 @@ async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
         .into_response()
 }
 
+/// CORS 预检：media 元素带 Range 的跨源请求可能先发 OPTIONS
+async fn stream_options() -> Response {
+    let mut resp = StatusCode::OK.into_response();
+    let headers = resp.headers_mut();
+    headers.insert("access-control-allow-origin", "*".parse().unwrap());
+    headers.insert("access-control-allow-headers", "range, content-type".parse().unwrap());
+    headers.insert("access-control-allow-methods", "GET, OPTIONS".parse().unwrap());
+    headers.insert("access-control-max-age", "86400".parse().unwrap());
+    resp
+}
+
 pub async fn spawn() -> Result<(), String> {
-    let app = Router::new().route("/audio/{key}", get(stream)).with_state(());
+    let app = Router::new()
+        .route("/audio/{key}", get(stream).options(stream_options))
+        .with_state(());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .map_err(|e| e.to_string())?;

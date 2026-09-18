@@ -35,7 +35,7 @@ export default function AddBar({ input, onInput, onParsed }: Props) {
       <div className={`addbar${busy ? ' busy' : ''}`}>
         <input
           value={input}
-          placeholder="粘贴 B 站视频链接或 BV 号，回车解析"
+          placeholder="粘贴 B 站链接或 BV 号，回车解析"
           onChange={(e) => onInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && void go()}
           spellCheck={false}
