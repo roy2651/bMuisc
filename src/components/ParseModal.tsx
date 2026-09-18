@@ -26,13 +26,15 @@ export default function ParseModal({ view, onClose, onConfirm }: Props) {
       return view.pages
         .filter((p) => checkedPages.has(p.page))
         .map((p) => ({
+          // 歌名 = 分 P 自己的标题（通常就是歌名）；视频大标题降级为来源信息
           bvid: view.bvid,
           cid: p.cid,
-          title: view.title,
+          title: p.part || view.title,
           up: view.owner,
           cover: view.cover,
           duration: p.duration,
-          pageLabel: hasMultiP ? `P${p.page} ${p.part}` : undefined,
+          pageLabel: hasMultiP ? `P${p.page}` : undefined,
+          source: hasMultiP ? view.title : undefined,
         }));
     }
     return (view.season?.episodes ?? [])
@@ -45,6 +47,7 @@ export default function ParseModal({ view, onClose, onConfirm }: Props) {
         cover: e.cover || view.cover,
         duration: e.duration,
         pageLabel: '合集',
+        source: view.season?.title,
       }));
   }, [tab, checkedPages, checkedEps, view, hasMultiP, hasSeason]);
 

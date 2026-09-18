@@ -11,10 +11,10 @@ import NowPlaying from './components/NowPlaying';
 import ParseModal from './components/ParseModal';
 import PlayerBar from './components/PlayerBar';
 import QueuePanel from './components/QueuePanel';
-import { IconX } from './components/icons';
+import { IconX, LogoMark } from './components/icons';
 
 export default function App() {
-  const { tracks, currentId, loading, error, dismissError, restore, addTracks, flushSnapshot } = usePlayer();
+  const { tracks, currentId, playing, loading, error, dismissError, restore, addTracks, flushSnapshot } = usePlayer();
   const [parsed, setParsed] = useState<ViewInfo | null>(null);
   const [input, setInput] = useState('');
   const [version, setVersion] = useState('');
@@ -50,41 +50,36 @@ export default function App() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <div className="logo" title="bMuisc">BM</div>
-        <div className="sidebar-foot">v{version || '0.0.0'}</div>
-      </aside>
-
-      <div className="main">
-        <header className="topbar">
-          <div className="brand">
-            <h1>bMuisc</h1>
-            <span className="brand-sub">B 站音乐台</span>
-          </div>
-          <AddBar
-            input={input}
-            onInput={setInput}
-            onParsed={(v) => {
-              setParsed(v);
-              setInput('');
-            }}
-          />
-        </header>
-
-        {error && (
-          <div className="banner" role="alert">
-            <span>{error}</span>
-            <button onClick={dismissError} aria-label="关闭提示"><IconX size={14} /></button>
-          </div>
-        )}
-
-        <div className="content">
-          <NowPlaying track={track} loading={loading} />
-          <QueuePanel />
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand-mark" title="bMuisc"><LogoMark size={26} /></span>
+          <h1>bMuisc</h1>
+          <span className="brand-sub">B 站音乐台</span>
         </div>
+        <AddBar
+          input={input}
+          onInput={setInput}
+          onParsed={(v) => {
+            setParsed(v);
+            setInput('');
+          }}
+        />
+        {version && <span className="version-chip">v{version}</span>}
+      </header>
 
-        <PlayerBar />
+      {error && (
+        <div className="banner" role="alert">
+          <span>{error}</span>
+          <button onClick={dismissError} aria-label="关闭提示"><IconX size={14} /></button>
+        </div>
+      )}
+
+      <div className="content">
+        <NowPlaying track={track} loading={loading} playing={playing} />
+        <QueuePanel />
       </div>
+
+      <PlayerBar />
 
       {parsed && (
         <ParseModal

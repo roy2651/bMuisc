@@ -146,3 +146,38 @@ export const IconArrowDown = ({ size }: IconProps) => (
     <path d="m6 10 6 6 6-6" />
   </svg>
 );
+
+export const IconLocate = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="12" r="6.5" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+  </svg>
+);
+
+// 品牌 logo：bm 手写单色标（描边白，跟随 currentColor），来自 design bm-mark-white.svg
+export const LogoMark = ({ size = 30 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 512 512" fill="none" aria-hidden="true">
+    <g stroke="currentColor" strokeWidth={44} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M128 170V282C128 316 151 338 184 338C219 338 242 313 242 281C242 248 219 226 186 226C153 226 128 250 128 282" />
+      <path d="M284 326V255C284 235 297 223 315 223C334 223 347 235 347 255V326M347 255C347 235 360 223 378 223C397 223 410 235 410 255V326" />
+    </g>
+  </svg>
+);
+
+// 品牌完整瓷片：渐变底 + bm 标，用于空状态展示
+export const LogoTile = ({ size = 96 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 512 512" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="bm-tile" x1="0" y1="0" x2="1" y2="1">
+        <stop stopColor="#F36AA1" />
+        <stop offset="1" stopColor="#AD65DC" />
+      </linearGradient>
+    </defs>
+    <rect x="16" y="16" width="480" height="480" rx={112} fill="url(#bm-tile)" />
+    <g stroke="#fff" strokeWidth={44} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M128 170V282C128 316 151 338 184 338C219 338 242 313 242 281C242 248 219 226 186 226C153 226 128 250 128 282" />
+      <path d="M284 326V255C284 235 297 223 315 223C334 223 347 235 347 255V326M347 255C347 235 360 223 378 223C397 223 410 235 410 255V326" />
+    </g>
+  </svg>
+);
