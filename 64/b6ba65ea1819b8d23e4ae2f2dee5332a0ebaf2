@@ -1,0 +1,28 @@
+README.md
+  s_34cee9fc3fc328::t_80d185ba15663f 3
+  s_34cee9fc3fc328::t_bb048141b45352 182
+  s_34cee9fc3fc328::t_5228856d97e478 187-194,197
+  s_34cee9fc3fc328::t_16327e706b2681 125,131-133,139-140,147-148,155-176
+  s_34cee9fc3fc328::t_decc472016ec50 5
+  s_34cee9fc3fc328::t_48ef7443c3eee7 177
+docs/project-plan.md
+  s_34cee9fc3fc328::t_7ba1c2640bc262 89
+scripts/gen-icon.ps1
+  s_34cee9fc3fc328::t_f493771c82e4b6 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "64b6ba65ea1819b8d23e4ae2f2dee5332a0ebaf2",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
