@@ -1,6 +1,6 @@
 // 解析结果弹窗：展示元信息，选择分 P / 合集条目加入队列。
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ViewInfo } from '../api';
 import type { Track } from '../store';
 import { fmtDur } from '../util';
@@ -53,6 +53,16 @@ export default function ParseModal({ view, onClose, onConfirm }: Props) {
 
   const count = selectedTracks.length;
   const eps = view.season?.episodes ?? [];
+
+  // Esc 关闭弹窗；isComposing 排除输入法用 Esc 取消候选词的情况（mac 会以 Escape 上报）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   return (
     <div className="modal-mask" onClick={onClose}>

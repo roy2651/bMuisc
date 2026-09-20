@@ -25,7 +25,8 @@ html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  font-family: 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', system-ui, sans-serif;
+  /* Windows 用 Segoe/雅黑；macOS 走 -apple-system（SF Pro + 苹方）。Segoe 放前面保证 Windows 不变 */
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', system-ui, sans-serif;
   background:
     radial-gradient(1100px 500px at 85% -10%, rgba(177, 108, 234, 0.09), transparent 60%),
     radial-gradient(900px 460px at -10% 110%, rgba(251, 114, 153, 0.07), transparent 60%),
@@ -33,7 +34,13 @@ body {
   color: var(--text);
   overflow: hidden;
   user-select: none;
+  /* WKWebView（macOS）：深底上关掉次像素抗锯齿文字更清爽；禁掉滚动橡皮筋 */
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
+
+/* 封面图不该被拖出原生图片拖拽（macOS 拖拽体验尤其明显） */
+img { -webkit-user-drag: none; }
 
 ::selection { background: rgba(251, 114, 153, 0.35); }
 
@@ -362,7 +369,7 @@ body {
 .queue-empty span { font-size: 12px; color: var(--text3); }
 .undo-btn { margin-top: 8px; border-color: rgba(251, 114, 153, 0.45); color: #ffc2d5; }
 
-.queue-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; flex: 1; }
+.queue-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; flex: 1; overscroll-behavior: none; }
 
 .queue-row {
   display: flex;
@@ -544,7 +551,7 @@ body {
 }
 .modal-tabs .tab-actions button:hover { color: #ffc2d5; border-color: rgba(251, 114, 153, 0.7); }
 
-.modal-list { overflow-y: auto; min-height: 120px; max-height: 320px; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 6px; }
+.modal-list { overflow-y: auto; min-height: 120px; max-height: 320px; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 6px; overscroll-behavior: none; }
 
 .pick-row {
   display: flex;
