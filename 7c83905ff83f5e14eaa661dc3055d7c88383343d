@@ -1,0 +1,34 @@
+src/index.css
+  s_34cee9fc3fc328::t_96e2285daed361 37-39,42-43
+  s_34cee9fc3fc328::t_e08ea06141df52 28-29,44
+  s_34cee9fc3fc328::t_cd4c31601863f4 554
+  s_34cee9fc3fc328::t_3a9187043f3d40 372
+package.json
+  s_34cee9fc3fc328::t_2b57205940d8e8 4
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_851798f0dfe9ff 57,60
+  s_34cee9fc3fc328::t_bb79470b9bf5c6 3
+  s_34cee9fc3fc328::t_a197de9eb330de 58-59,61-66
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_9bdc243d7a233b 3
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_79797beb4ac523 4
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_2c747a2e1384a5 349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7c83905ff83f5e14eaa661dc3055d7c88383343d",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
