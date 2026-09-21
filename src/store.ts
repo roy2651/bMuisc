@@ -36,9 +36,9 @@ export interface Playlist {
   keys: TrackKey[];
 }
 
-// 导航视图：正在播放页 / 我的喜欢 / 全部音乐 / 某个自建歌单。
+// 导航视图：正在播放页 / 我的喜欢 / 全部音乐 / 最近播放 / 某个自建歌单。
 // 队列不再是视图——它是独立抽屉（queueOpen），浏览哪里与播什么互不相干。
-export type ViewSpec = { kind: 'nowplaying' } | { kind: 'favs' } | { kind: 'all' } | { kind: 'playlist'; id: string };
+export type ViewSpec = { kind: 'nowplaying' } | { kind: 'favs' } | { kind: 'all' } | { kind: 'recent' } | { kind: 'playlist'; id: string };
 
 export interface Toast {
   id: number;
@@ -54,6 +54,7 @@ const SAVE_KEY = 'bmuisc.snapshot.v3';
 const SAVE_KEY_V2 = 'bmuisc.snapshot.v2';
 const SAVE_KEY_V1 = 'bmuisc.snapshot.v1';
 const TOAST_MS = 4500;
+const RECENT_MAX = 50; // 最近播放封顶条数：按最后开播时间保留最新的
 
 let uidSeq = 0;
 const newUid = () => `t${Date.now().toString(36)}-${(uidSeq++).toString(36)}`;
@@ -63,6 +64,12 @@ let toastSeq = 0;
 // 快照恢复完成前禁止落盘：引擎初始化失败时界面仍可交互，
 // 若无门控，任意操作或关窗会用空状态覆盖快照，曲库/歌单/喜欢全部丢失
 let hydrated = false;
+// 最近播放：本会话（当前加载的这一首）已记录过开播的 key。同一首的暂停恢复/卡顿
+// 恢复都靠它跳过——不能假设当前曲目就在 recent[0]：用户可能已把它从最近播放里
+// 显式移除，恢复播放不得悄悄撤销该移除（对抗复核确认的真实缺陷）。
+// startTrack 默认重置标记：每个新的播放动作（点播/切歌/自动接续/重播当前曲）= 新会话；
+// 仅错误重试路径（toggle 的 needsReload 分支）传 keepRecentSession 保留，见 startTrack 注释。
+let recentRecordedFor: TrackKey | null = null;
 
 function writeSnapshot(s: PlayerState) {
   if (!hydrated) return;
@@ -78,6 +85,7 @@ function writeSnapshot(s: PlayerState) {
     libOrder: s.libOrder,
     playlists: s.playlists,
     favs: s.favs,
+    recent: s.recent,
     view: s.view,
     lastSaveTo: s.lastSaveTo,
     savedAt: Date.now(),
@@ -131,6 +139,7 @@ export interface PlayerState {
   libOrder: TrackKey[]; // 曲目库插入顺序（Record 不保序）
   playlists: Playlist[]; // 自建歌单，仅存 key 引用
   favs: TrackKey[]; // 我的喜欢：红心即加入的固定歌单（有序，类似网易云）
+  recent: TrackKey[]; // 最近播放：按最后开播时间倒序的去重 key（封顶 RECENT_MAX），只引用曲库
   view: ViewSpec; // 左侧导航当前浏览位置，重启恢复
   lastBrowse: ViewSpec; // 进入正在播放页之前的浏览位置（返回用），不落盘
   queueOpen: boolean; // 右侧队列抽屉显隐
@@ -165,6 +174,8 @@ export interface PlayerState {
   addToPlaylist(id: string, items: LibTrack[]): number;
   removeFromPlaylist(id: string, key: TrackKey): void;
   undoRemoveFromPlaylist(): void;
+  /** 从最近播放移除单条（不影响曲库/歌单/喜欢） */
+  removeFromRecent(key: TrackKey): void;
   toggleFav(item: LibTrack): void;
   setView(view: ViewSpec): void;
   setQueueOpen(open: boolean): void;
@@ -231,13 +242,21 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
     ? data.playlists.filter((p): p is Playlist => !!p && typeof p.id === 'string' && Array.isArray(p.keys))
     : [];
   const favs = Array.isArray(data.favs) ? data.favs.filter((k): k is TrackKey => typeof k === 'string' && !!lib[k]) : [];
+  // 最近播放：只收仍在库中的合法 key，去重保序封顶；旧快照没有该字段 → 空列表
+  const recent: TrackKey[] = [];
+  if (Array.isArray(data.recent)) {
+    for (const k of data.recent) {
+      if (typeof k === 'string' && lib[k] && !recent.includes(k)) recent.push(k);
+      if (recent.length >= RECENT_MAX) break;
+    }
+  }
   // 视图迁移：v2 的 'queue' 不再是导航位置 → 全部音乐；指向已删歌单 → 全部音乐
   const rawView = data.view as ViewSpec | undefined;
   let view: ViewSpec = { kind: 'all' };
   if (rawView && typeof rawView === 'object' && 'kind' in rawView) {
     if (rawView.kind === 'playlist' && playlists.some((p) => p.id === (rawView as { id: string }).id)) {
       view = rawView;
-    } else if (rawView.kind === 'favs' || rawView.kind === 'all' || rawView.kind === 'nowplaying') {
+    } else if (rawView.kind === 'favs' || rawView.kind === 'all' || rawView.kind === 'recent' || rawView.kind === 'nowplaying') {
       view = rawView;
     }
   }
@@ -249,7 +268,7 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
         ? rawSave
         : 'all';
   if (tracks.length === 0 && libOrder.length === 0) {
-    set({ volume, muted, mode, lib, libOrder, playlists, favs, view, lastSaveTo });
+    set({ volume, muted, mode, lib, libOrder, playlists, favs, recent, view, lastSaveTo });
     return;
   }
   const currentId = tracks.some((t) => t.uid === data.currentId) ? data.currentId! : null;
@@ -267,6 +286,7 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
     libOrder,
     playlists,
     favs,
+    recent,
     view,
     lastSaveTo,
   });
@@ -290,10 +310,16 @@ export const usePlayer = create<PlayerState>((set, get) => {
     if (target) void prefetchTrack(target.bvid, target.cid);
   }
 
-  function startTrack(index: number, seekTo?: number) {
+  function startTrack(index: number, seekTo?: number, opts?: { keepRecentSession?: boolean }) {
     const { tracks } = get();
     const track = tracks[index];
     if (!track) return;
+    // 最近播放会话门控：startTrack 即新播放会话（点播/切歌/自动接续/清空后重播/
+    // 主动重播当前曲目），旧标记作废——重新点播同一首也要重新入史，key 比对无法
+    // 区分用户意图，由调用入口声明。唯一例外是错误重试（toggle 的 needsReload 分支
+    // 传 keepRecentSession）：失败会话是原会话的延续，显式移除不被重试撤销；
+    // 暂停/缓冲恢复不经过 startTrack，同样保留移除。
+    if (!opts?.keepRecentSession) recentRecordedFor = null;
     const resumeAt = seekTo ?? null; // 本次加载试图定位的进度：失败时回写，重试不从 0 开始
     // 开始加载即消费掉重启恢复的定位，避免之后清空→撤销再播放时跳到过期进度
     set({ currentId: track.uid, error: null, position: seekTo ?? 0, savedSeek: null });
@@ -339,10 +365,31 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
   // 按来源物化曲目列表（缺库条目跳过）
   function materialize(source: 'favs' | 'all' | string): LibTrack[] {
-    const { lib, libOrder, playlists, favs } = get();
+    const { lib, libOrder, playlists, favs, recent } = get();
     const keys =
-      source === 'favs' ? favs : source === 'all' ? libOrder : (playlists.find((p) => p.id === source)?.keys ?? []);
+      source === 'favs'
+        ? favs
+        : source === 'all'
+          ? libOrder
+          : source === 'recent'
+            ? recent
+            : (playlists.find((p) => p.id === source)?.keys ?? []);
     return keys.map((k) => lib[k]).filter(Boolean);
+  }
+
+  // 最近播放记录：引擎上报真正出声（playing 事件：playing=true 且 loading=false）时调用。
+  // play 事件（请求播放）只翻按钮态，不等于开播——缓冲后失败、从未出声的曲目不入史。
+  // recentRecordedFor 门控本会话：同一首的恢复/重试不刷位置，且若用户已把该曲
+  // 从最近播放移除，移除保持生效；新会话由 startTrack 重置标记，重新点播可再次入列。
+  // 落盘由 patchMedia 的播放类立即写承接，这里不重复保存。
+  function recordRecent() {
+    const { tracks, currentId, recent } = get();
+    const t = tracks.find((x) => x.uid === currentId);
+    if (!t) return;
+    const k = keyOf(t);
+    if (recentRecordedFor === k) return;
+    recentRecordedFor = k;
+    set({ recent: [k, ...recent.filter((x) => x !== k)].slice(0, RECENT_MAX) });
   }
 
   return {
@@ -363,6 +410,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     libOrder: [],
     playlists: [],
     favs: [],
+    recent: [],
     view: { kind: 'all' },
     lastBrowse: { kind: 'all' },
     queueOpen: true,
@@ -501,7 +549,8 @@ export const usePlayer = create<PlayerState>((set, get) => {
       if (!playing && needsReload()) {
         const index = tracks.findIndex((t) => t.uid === currentId);
         if (index >= 0) {
-          startTrack(index, get().position);
+          // 错误重试：原会话的延续而非新点播，保留最近播放会话标记（显式移除不被撤销）
+          startTrack(index, get().position, { keepRecentSession: true });
           return;
         }
       }
@@ -715,6 +764,13 @@ export const usePlayer = create<PlayerState>((set, get) => {
       saveSnapshot(get(), true);
     },
 
+    removeFromRecent(key) {
+      const { recent } = get();
+      if (!recent.includes(key)) return;
+      set({ recent: recent.filter((k) => k !== key) });
+      saveSnapshot(get(), true);
+    },
+
     toggleFav(item) {
       const k = keyOf(item);
       const { favs } = get();
@@ -802,9 +858,13 @@ export const usePlayer = create<PlayerState>((set, get) => {
     patchMedia(patch) {
       const s = get();
       set(patch as Partial<PlayerState>);
+      // 真正出声（playing 事件）才记入最近播放：play 事件只翻按钮态，
+      // 缓冲后失败、从未开播的不算「播过」（审查 P2：失败尝试不得挤掉有效历史）
+      if (patch.playing === true && patch.loading === false) recordRecent();
       if (patch.error != null) return; // 出错状态不覆盖快照
       if (patch.playing !== undefined) {
-        saveSnapshot({ ...s, ...patch } as PlayerState, true); // 播放/暂停立即落盘，关窗不丢
+        // get() 而非 {...s, ...patch}：recordRecent 刚写入的 recent 也一并落盘
+        saveSnapshot(get(), true); // 播放/暂停立即落盘，关窗不丢
       } else if (patch.position !== undefined || patch.duration !== undefined) {
         saveSnapshot({ ...s, ...patch } as PlayerState); // 进度类走 2 秒节流
       }

@@ -182,6 +182,15 @@ export const IconHeartFilled = ({ size }: IconProps) => (
   </svg>
 );
 
+// 最近播放：逆时针回转的时钟（history）
+export const IconHistory = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M1 4v6h6" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    <path d="M12 6v6l4 2" />
+  </svg>
+);
+
 // 品牌 logo：bm 手写单色标（描边白，跟随 currentColor），来自 design bm-mark-white.svg
 export const LogoMark = ({ size = 30 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 512 512" fill="none" aria-hidden="true">
