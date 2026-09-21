@@ -1,0 +1,32 @@
+docs/project-plan.md
+  s_34cee9fc3fc328::t_4def3ebe7d314f 5
+  s_34cee9fc3fc328::t_8c1433187fa192 205
+  s_34cee9fc3fc328::t_e7f9a4ed0dea93 216
+README.md
+  s_34cee9fc3fc328::t_bd4308e28dc896 160
+  s_34cee9fc3fc328::t_cd9dc1a9e1caf5 5
+package.json
+  s_34cee9fc3fc328::t_390b7c9b38bd85 4
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_390b7c9b38bd85 4
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_390b7c9b38bd85 3
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_64f71b87fa0b5d 349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "53c28d4043bf0fd415d45b30b5a7b2f3e44fcc59",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
