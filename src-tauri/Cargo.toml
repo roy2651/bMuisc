@@ -1,6 +1,6 @@
 [package]
 name = "bmuisc"
-version = "0.1.5"
+version = "0.2.0"
 description = "B 站音乐播放器"
 authors = ["roy2651"]
 edition = "2021"
