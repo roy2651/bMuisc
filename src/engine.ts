@@ -225,6 +225,9 @@ export async function loadTrack(bvid: string, cid: number, seekTo?: number): Pro
   } catch (e) {
     if (my !== token) return true; // 会话已被取代：错误交给新会话的状态，resolving 同样不得代为清除
     resolving = false;
+    // 失败终态必须真正静音旧元素：UI 随后显示「已暂停+错误」，若旧源仍在出声，
+    // 用户点「播放」会被引擎按暂停分支处理（wantPlay=false），取消重试的自动开播
+    audio!.pause();
     const msg = e instanceof Error ? e.message : String(e);
     report({ loading: false, playing: false, error: `加载失败：${msg}` });
     return false;

@@ -479,16 +479,18 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     toggle() {
-      const { currentId, tracks, playing, savedSeek } = get();
+      const { currentId, tracks, playing, savedSeek, position } = get();
       if (!currentId) {
         if (tracks.length > 0) startTrack(0);
         return;
       }
-      // 重启恢复的会话：媒体尚未加载（audio 无源），点播放即从记录进度继续
+      // 重启恢复的会话：媒体尚未加载（audio 无源），点播放即从记录进度继续。
+      // savedSeek 已被上次点击消费时回退 position：解析窗口（src 未挂）内双击播放
+      // 会两次进入本分支，不能让第二次把续播点重置为 0（并落盘覆盖原进度）
       if (!playing && !hasSource()) {
         const index = tracks.findIndex((t) => t.uid === currentId);
         if (index >= 0) {
-          startTrack(index, savedSeek ?? 0);
+          startTrack(index, savedSeek ?? position);
           return;
         }
       }
