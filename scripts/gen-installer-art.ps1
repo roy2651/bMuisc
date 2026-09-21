@@ -1,7 +1,7 @@
 # Generates bMuisc installer branding assets (ASCII-only script; CJK via char codes).
 # Output: nsis-sidebar.bmp 164x314, nsis-header.bmp 150x57, dmg-background.png 660x400
 Add-Type -AssemblyName System.Drawing
-$root = 'E:\code\bMuisc\src-tauri\icons'
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\src-tauri\icons')).Path
 $icon = [System.Drawing.Image]::FromFile("$root\icon.png")
 
 $F36AA1 = [System.Drawing.Color]::FromArgb(255, 0xF3, 0x6A, 0xA1)
