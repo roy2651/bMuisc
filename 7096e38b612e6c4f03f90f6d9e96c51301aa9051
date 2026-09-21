@@ -1,0 +1,22 @@
+scripts/gen-installer-art.ps1
+  s_34cee9fc3fc328::t_fbfc11f916a877 1-80
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_9bf9af4c5ebb84 37-42,44-51
+  s_34cee9fc3fc328::t_06b6a1892bb6a9 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7096e38b612e6c4f03f90f6d9e96c51301aa9051",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
