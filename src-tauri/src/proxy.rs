@@ -59,12 +59,17 @@ pub fn port() -> u16 {
 
 /// 开放式 Range（bytes=N-）切成有界请求；有界/后缀 Range 原样透传。
 fn normalize_range(range: Option<&str>) -> Option<String> {
-    let range = range?;
-    let rest = range.trim().strip_prefix("bytes=")?;
+    let range = range?.trim();
+    let rest = range.strip_prefix("bytes=")?.trim();
+    // 后缀形式 bytes=-N（读末尾 N 字节）：语义合法，原样透传，丢弃会退化成整段传输
+    if let Some(suffix) = rest.strip_prefix('-') {
+        suffix.trim().parse::<u64>().ok()?;
+        return Some(range.to_string());
+    }
     let (start, end) = rest.split_once('-')?;
     let start: u64 = start.trim().parse().ok()?;
     match end.trim().parse::<u64>() {
-        Ok(_) => Some(range.trim().to_string()), // 有界：原样
+        Ok(_) => Some(range.to_string()), // 有界：原样
         Err(_) => Some(format!("bytes={}-{}", start, start + CHUNK - 1)), // 开放式：切块
     }
 }
@@ -103,8 +108,12 @@ async fn stream(Path(key): Path<String>, headers: HeaderMap) -> Response {
             Err(_) => continue, // 换下一个候选
         };
         let status = up.status();
-        if status.is_client_error() && status != StatusCode::RANGE_NOT_SATISFIABLE {
-            continue; // 403 等：地址失效或节点拒绝，轮替
+        if status.is_client_error() || status.is_server_error() {
+            // 4xx（403/404/416 等）：地址失效、节点拒绝或个别节点 Range 异常；
+            // 5xx（500/502/503 等）：该节点临时故障。二者都轮替候选，
+            // 全部失败时落到循环外的 502 统一报错，不把坏状态透传给播放器。
+            // （实测 2026-09-20：个别节点对合法 Range 返回 416，透传会误伤正常播放）
+            continue;
         }
 
         let mut resp = Response::builder().status(status);

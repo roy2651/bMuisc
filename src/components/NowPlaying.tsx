@@ -1,9 +1,10 @@
-// 正在播放主区域：歌名第一信息，UP/来源次级，封面 + 柔和模糊背景 + 播放波浪 + 原页面入口
+// 正在播放页：歌名第一信息，UP/来源次级，封面 + 柔和模糊背景 + 播放波浪 + 原页面入口。
+// 从底栏封面展开进入；收起回到之前的浏览位置（浏览哪里与播什么互不影响）。
 
 import { openUrl } from '@tauri-apps/plugin-opener';
-import type { Track } from '../store';
+import { usePlayer, type Track } from '../store';
 import { fmtDur } from '../util';
-import { IconExternal, LogoTile } from './icons';
+import { IconExternal, IconX, LogoTile } from './icons';
 import WaveViz from './WaveViz';
 
 interface Props {
@@ -13,9 +14,17 @@ interface Props {
 }
 
 export default function NowPlaying({ track, loading, playing }: Props) {
+  const setView = usePlayer((s) => s.setView);
+  function collapse() {
+    const back = usePlayer.getState().lastBrowse;
+    setView(back.kind === 'nowplaying' ? { kind: 'all' } : back);
+  }
   if (!track) {
     return (
       <div className="nowplaying empty">
+        <button className="np-collapse" onClick={collapse} title="收起" aria-label="收起正在播放">
+          <IconX size={16} />
+        </button>
         <div className="empty-art">
           <LogoTile size={68} />
         </div>
@@ -27,6 +36,9 @@ export default function NowPlaying({ track, loading, playing }: Props) {
   }
   return (
     <div className="nowplaying">
+      <button className="np-collapse" onClick={collapse} title="收起" aria-label="收起正在播放">
+        <IconX size={16} />
+      </button>
       <div className="np-backdrop" style={{ backgroundImage: `url(${track.cover})` }} />
       <WaveViz playing={playing} />
       <div className="np-card">

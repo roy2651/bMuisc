@@ -155,6 +155,33 @@ export const IconLocate = ({ size }: IconProps) => (
   </svg>
 );
 
+export const IconSearch = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="m16 16 4.5 4.5" />
+  </svg>
+);
+
+export const IconMore = ({ size }: IconProps) => (
+  <svg {...base(size)} fill="currentColor" stroke="none">
+    <circle cx="5" cy="12" r="1.7" />
+    <circle cx="12" cy="12" r="1.7" />
+    <circle cx="19" cy="12" r="1.7" />
+  </svg>
+);
+
+export const IconHeart = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M12 20.2s-7.3-4.6-9-9C1.8 8.3 3.8 5.2 7 5.2c1.9 0 3.7 1.1 5 2.9 1.3-1.8 3.1-2.9 5-2.9 3.2 0 5.2 3.1 4 6-1.7 4.4-9 9-9 9z" />
+  </svg>
+);
+
+export const IconHeartFilled = ({ size }: IconProps) => (
+  <svg {...base(size)} fill="currentColor" stroke="none">
+    <path d="M12 20.2s-7.3-4.6-9-9C1.8 8.3 3.8 5.2 7 5.2c1.9 0 3.7 1.1 5 2.9 1.3-1.8 3.1-2.9 5-2.9 3.2 0 5.2 3.1 4 6-1.7 4.4-9 9-9 9z" />
+  </svg>
+);
+
 // 品牌 logo：bm 手写单色标（描边白，跟随 currentColor），来自 design bm-mark-white.svg
 export const LogoMark = ({ size = 30 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 512 512" fill="none" aria-hidden="true">
