@@ -1,0 +1,23 @@
+docs/mini-window-eval.md
+  s_34cee9fc3fc328::t_168695d3de149b 1-62
+docs/project-plan.md
+  s_34cee9fc3fc328::t_c9d560ad4c2d3a 222
+README.md
+  s_34cee9fc3fc328::t_4b08b746525e8b 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "537356e2c60d9af5db6c1bef1d4dd494b3cd24e6",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
