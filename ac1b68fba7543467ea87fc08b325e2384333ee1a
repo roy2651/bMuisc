@@ -1,0 +1,41 @@
+src/components/PlayerBar.tsx
+  s_34cee9fc3fc328::t_746322592389f0 60
+  s_34cee9fc3fc328::t_603b3e2c752322 5
+src/components/NowPlaying.tsx
+  s_34cee9fc3fc328::t_254ea6f6e6e3e6 48
+  s_34cee9fc3fc328::t_fc2e12db2288e9 43-44
+  s_34cee9fc3fc328::t_f9e6adcae13318 6,8
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_6a414448628cd4 9
+  s_34cee9fc3fc328::t_6df17cc87f7eb0 113
+src/util.ts
+  s_34cee9fc3fc328::t_52da7e8fc6f186 10-11,14-17,22,27-29,33-36
+  s_34cee9fc3fc328::t_192a489b7edb19 12-13,18-21,23-26
+  s_34cee9fc3fc328::t_e9b7729d657a62 30-32
+src/components/TrackView.tsx
+  s_34cee9fc3fc328::t_43ec96a6f71dad 144
+  s_34cee9fc3fc328::t_fdab5328d740b6 10
+  s_34cee9fc3fc328::t_2eaf061a2c5c02 289
+src/components/QueuePanel.tsx
+  s_34cee9fc3fc328::t_9eff9309db002e 6
+  s_34cee9fc3fc328::t_ad2ab54403ae89 90
+src/components/ThumbImg.tsx
+  s_34cee9fc3fc328::t_06c376e98c850f 5,9
+  s_34cee9fc3fc328::t_2d856abab7539d 1-4,6-8,10-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ac1b68fba7543467ea87fc08b325e2384333ee1a",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
