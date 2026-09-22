@@ -1,0 +1,24 @@
+docs/platform-feasibility.md
+  s_34cee9fc3fc328::t_f4ee12545160b2 1-97
+README.md
+  s_34cee9fc3fc328::t_7a1e323f7e8a7b 29
+docs/project-plan.md
+  s_34cee9fc3fc328::t_8e9b236cf17554 222
+  s_34cee9fc3fc328::t_3b1842a315da06 259-260
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "95d819a26fe9f39332cb5691576afae20b091123",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
