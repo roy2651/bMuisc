@@ -3,8 +3,9 @@
 
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePlayer, type Track } from '../store';
-import { fmtDur } from '../util';
+import { fmtDur, thumbUrl } from '../util';
 import { IconExternal, IconX, LogoTile } from './icons';
+import ThumbImg from './ThumbImg';
 import WaveViz from './WaveViz';
 
 interface Props {
@@ -39,11 +40,12 @@ export default function NowPlaying({ track, loading, playing }: Props) {
       <button className="np-collapse" onClick={collapse} title="收起" aria-label="收起正在播放">
         <IconX size={16} />
       </button>
-      <div className="np-backdrop" style={{ backgroundImage: `url(${track.cover})` }} />
+      {/* 模糊装饰背景：16:9 缩略图即可（重度模糊下分辨率无关紧要）；CSS 背景无 onError，失败只是没有背景层 */}
+      <div className="np-backdrop" style={{ backgroundImage: `url(${thumbUrl(track.cover, 'wide')})` }} />
       <WaveViz playing={playing} />
       <div className="np-card">
         <div className="np-cover-wrap">
-          <img className="np-cover" src={track.cover} alt={track.title} />
+          <ThumbImg key={track.cover} className="np-cover" cover={track.cover} size="lg" alt={track.title} />
           {loading && <div className="np-loading"><span className="spinner" /></div>}
         </div>
         <div className="np-meta">

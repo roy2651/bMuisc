@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { keyOf, usePlayer } from '../store';
 import { fmtDur } from '../util';
+import ThumbImg from './ThumbImg';
 import { IconArrowDown, IconArrowUp, IconHeart, IconHeartFilled, IconLocate, IconTrash, IconX } from './icons';
 
 function EqBars() {
@@ -86,7 +87,7 @@ export default function QueuePanel() {
             return (
               <li key={t.uid} className={`queue-row${t.uid === currentId ? ' active' : ''}`}>
                 <span className="row-index">{t.uid === currentId && playing ? <EqBars /> : <span className="row-num">{i + 1}</span>}</span>
-                <img className="row-cover" src={t.cover} alt="" loading="lazy" />
+                <ThumbImg className="row-cover" cover={t.cover} size="sm" loading="lazy" />
                 <button
                   className="row-main"
                   onClick={() => s.playAt(t.uid)}

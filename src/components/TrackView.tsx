@@ -7,6 +7,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { keyOf, usePlayer, type LibTrack, type TrackKey } from '../store';
 import { fmtDur } from '../util';
 import PlaylistPicker from './PlaylistPicker';
+import ThumbImg from './ThumbImg';
 import { IconHeart, IconHeartFilled, IconHistory, IconMore, IconMusic, IconPlay, IconPlus, IconSearch, IconX } from './icons';
 
 interface Row {
@@ -140,7 +141,7 @@ export default function TrackView() {
         <IconHistory size={30} />
       </div>
     ) : cover ? (
-      <img className="list-cover" src={cover} alt="" />
+      <ThumbImg className="list-cover" cover={cover} size="md" />
     ) : (
       <div className="list-cover empty-tile">
         <IconMusic size={30} />
@@ -285,7 +286,7 @@ export default function TrackView() {
             return (
               <li key={r.key} className={`queue-row${active ? ' active' : ''}`}>
                 <span className="row-index">{active && playing ? <EqBars /> : <span className="row-num">{i + 1}</span>}</span>
-                <img className="row-cover" src={r.item.cover} alt="" loading="lazy" />
+                <ThumbImg className="row-cover" cover={r.item.cover} size="sm" loading="lazy" />
                 <button className="row-main" onClick={() => s.playFrom(source, r.key)} title={`播放：${r.item.title}（用此列表替换队列）`}>
                   <span className="row-title">{r.item.title}</span>
                   <span className="row-sub">

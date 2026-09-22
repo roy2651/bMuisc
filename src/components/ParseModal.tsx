@@ -6,6 +6,7 @@ import type { ViewInfo } from '../api';
 import { keyOf, usePlayer, type AddTarget, type Track } from '../store';
 import { fmtDur } from '../util';
 import PlaylistPicker from './PlaylistPicker';
+import ThumbImg from './ThumbImg';
 import { IconMusic, IconX } from './icons';
 
 interface Props {
@@ -109,7 +110,7 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
           <IconX />
         </button>
         <div className="modal-head">
-          <img className="modal-cover" src={view.cover} alt="" />
+          <ThumbImg className="modal-cover" cover={view.cover} size="md" />
           <div className="modal-head-info">
             <h2 title={view.title}>{view.title}</h2>
             <p>{view.owner} · {fmtDur(view.duration)} · 共 {view.pages.length} 个分 P</p>

@@ -2,6 +2,7 @@
 // 点封面在「正在播放页」与「浏览页」之间切换——播放与浏览是两个独立状态。
 import { usePlayer, keyOf, MODE_TEXT } from '../store';
 import { fmtDur } from '../util';
+import ThumbImg from './ThumbImg';
 import { IconHeart, IconHeartFilled, IconLoop, IconNext, IconOne, IconOrder, IconPause, IconPlay, IconPrev, IconQueue, IconRandom, IconVolume, IconVolumeMuted } from './icons';
 
 function ModeIcon() {
@@ -56,7 +57,7 @@ export default function PlayerBar() {
           {track ? (
             <>
               <button className="pb-cover-btn" onClick={toggleNowPlaying} title={onNowPlaying ? '收起正在播放' : '展开正在播放'}>
-                <img className="pb-cover" src={track.cover} alt="" />
+                <ThumbImg key={track.cover} className="pb-cover" cover={track.cover} size="sm" />
               </button>
               <div className="pb-info">
                 <span className="pb-title" title={track.title}>{track.title}</span>
