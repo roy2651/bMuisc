@@ -1,0 +1,50 @@
+src/mediaSession.ts
+  s_34cee9fc3fc328::t_9b00f5c47707d3 1-109
+src/engine.ts
+  s_34cee9fc3fc328::t_c8619caf63c4c6 231
+  s_34cee9fc3fc328::t_b41973687f25dc 377
+  s_34cee9fc3fc328::t_c4fed36d887be0 9
+  s_34cee9fc3fc328::t_59bb2b3142e0c8 144-146
+  s_34cee9fc3fc328::t_49167b39421dd4 339
+  s_34cee9fc3fc328::t_16140016241867 307-336,340-341
+  s_34cee9fc3fc328::t_9fe8ffd060c753 71-72,88,92,97,101,105,109-111
+  s_34cee9fc3fc328::t_80542c439ed562 38-50
+  s_34cee9fc3fc328::t_6da65b8f72369a 191-193,200
+  s_34cee9fc3fc328::t_e8cbee99c922b3 214
+  s_34cee9fc3fc328::t_a859c7376acfb0 187-190,194-197
+  s_34cee9fc3fc328::t_ac3fc5245babde 272
+src-tauri/capabilities/default.json
+  s_34cee9fc3fc328::t_29e750a2cccef1 10
+src/App.tsx
+  s_34cee9fc3fc328::t_e82a23a3849349 94,99-100,103-123
+  s_34cee9fc3fc328::t_d24bab4ba0fbb7 95-98,101-102
+  s_34cee9fc3fc328::t_e15f20817df2b1 52,62
+  s_34cee9fc3fc328::t_0e9b74c42d62d4 53-56,58,61
+  s_34cee9fc3fc328::t_fea19418f4066a 9
+  s_34cee9fc3fc328::t_1f8bb1559826c7 124
+package.json
+  s_34cee9fc3fc328::t_7aa4ec6f507d21 16
+src/store.ts
+  s_34cee9fc3fc328::t_077fdc179805be 564-596
+  s_34cee9fc3fc328::t_d4e9fb21fd235f 160-163
+  s_34cee9fc3fc328::t_1b679d117ce08b 12
+  s_34cee9fc3fc328::t_5911bb9efe8ad3 597
+package-lock.json
+  s_34cee9fc3fc328::t_158fff602436a6 12,1403-1411
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "94715e3546a03d7a47a11d92e4ac88235e3837fa",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash-260828"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
