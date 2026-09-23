@@ -61,6 +61,10 @@ $hb.Save("$env:TEMP\preview-header.png", [System.Drawing.Imaging.ImageFormat]::P
 $g.Dispose(); $hb.Dispose()
 
 # ---- DMG background 660x400 (32bpp ARGB PNG; consumed by the macOS build) ----
+# Tauri places the REAL icons at fixed coords: app (180,170), Applications (480,170),
+# each ~128px. The background must stay out of the way: NO logo / wordmark / hero icon
+# in the middle band (overlapping art reads as a second app icon). Keep only a guiding
+# arrow between the two real icon slots and an instruction line at the bottom.
 $pair = New-Canvas 660 400 ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $db = $pair[0]; $g = $pair[1]
 $bg2 = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
@@ -69,11 +73,15 @@ $bg2 = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
   [System.Drawing.Color]::FromArgb(255, 0x12, 0x0F, 0x18),
   90.0)
 $g.FillRectangle($bg2, 0, 0, 660, 400)
-$g.DrawImage($icon, 266, 78, 128, 128)
-Add-Text $g 'bMuisc' 'Segoe UI' ([int][System.Drawing.FontStyle]::Bold) 30 $white (New-Object System.Drawing.RectangleF(0, 226, 660, 52))
-Add-Text $g $cjk 'Microsoft YaHei UI' 0 13 $gray (New-Object System.Drawing.RectangleF(0, 282, 660, 28))
-$g.DrawRectangle([System.Drawing.Pens]::Transparent, 0, 0, 1, 1)
+$arrow = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255, 0x8A, 0x7F, 0x99), 2.5)
+$arrow.EndCap = [System.Drawing.Drawing2D.LineCap]::ArrowAnchor
+$g.DrawLine($arrow, 276, 170, 404, 170)
+$arrow.Dispose()
+$cjkDrag = -join @([char]0x628A, ' bMuisc ', [char]0x62D6, [char]0x5230, [char]0x53F3, [char]0x4FA7, ' Applications ', [char]0x6587, [char]0x4EF6, [char]0x5939, [char]0x5B8C, [char]0x6210, [char]0x5B89, [char]0x88C5)
+Add-Text $g $cjkDrag 'Microsoft YaHei UI' 0 13 $white (New-Object System.Drawing.RectangleF(0, 306, 660, 26))
+Add-Text $g 'Drag bMuisc into the Applications folder' 'Segoe UI' 0 10 $gray (New-Object System.Drawing.RectangleF(0, 338, 660, 22))
 $db.Save("$root\dmg-background.png", [System.Drawing.Imaging.ImageFormat]::Png)
+$db.Save("$env:TEMP\preview-dmg.png", [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose(); $db.Dispose()
 
 $icon.Dispose()
