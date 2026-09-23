@@ -1,0 +1,19 @@
+AGENTS.md
+  s_13c8e8ed9df516::t_cae4ea8c7d46ef 65,67,69,71-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8d67a3c4b80489b857668a249e1606ef8c052ed9",
+  "prompts": {},
+  "sessions": {
+    "s_13c8e8ed9df516": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c192-272f-7c02-b235-3b693670d209",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
