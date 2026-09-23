@@ -1,0 +1,115 @@
+src/App.tsx
+  s_34cee9fc3fc328::t_d25cf1f07bb005 113-115
+  s_34cee9fc3fc328::t_de6d20e7b23a46 154-157
+  s_34cee9fc3fc328::t_4a669144162b24 71-77
+  s_34cee9fc3fc328::t_735d64df94bae2 64,67,82
+  s_34cee9fc3fc328::t_1869c900cd99d1 6,10,16,20-21,28-29
+  s_34cee9fc3fc328::t_ac589a2f2825df 65-66,68-70,78-79
+src/index.css
+  s_34cee9fc3fc328::t_c6ea072d9ec634 982-983
+  s_34cee9fc3fc328::t_ee59aebee9f67c 980-981,984-1024
+src/components/UpdateModal.tsx
+  s_34cee9fc3fc328::t_e2f278147e4829 1-5,9-18,26,49,55,58-60,73,82,94-96,98-99,121,164,169-171,174-179,182-186,189-193,195-205,207-209,213-221
+  s_34cee9fc3fc328::t_e566d6839563d1 36-46
+  s_34cee9fc3fc328::t_5a5fa9d0e23096 8
+  s_34cee9fc3fc328::t_3af59eb2cb4881 159,163,166-168
+  s_34cee9fc3fc328::t_291b73f2aeb8e9 62-64,68-72
+  s_34cee9fc3fc328::t_d97c7493238621 19
+  s_34cee9fc3fc328::t_5b1cd3141d4ffb 83-86,88,92
+  s_34cee9fc3fc328::t_ad27abb395458c 113-120,122,125-133,139
+  s_34cee9fc3fc328::t_3c663766cf72c3 180
+  s_34cee9fc3fc328::t_e9ff6bf5996e53 187-188
+  s_34cee9fc3fc328::t_a4bb5a96bfa3d2 123
+  s_34cee9fc3fc328::t_6f05ed8f64f479 87,89,91,93
+  s_34cee9fc3fc328::t_2ba00543a5733e 27-29,35,47-48
+  s_34cee9fc3fc328::t_d77b6c8f96dd48 74-81
+  s_34cee9fc3fc328::t_ea0141ab78921e 50-54
+  s_34cee9fc3fc328::t_871af2b53baffd 97,102-112,140-154,165,172-173
+  s_34cee9fc3fc328::t_55782a34e4d05a 6
+  s_34cee9fc3fc328::t_a68f43b784827b 90
+  s_34cee9fc3fc328::t_fe8d812aaac8f6 30-34
+  s_34cee9fc3fc328::t_be3085ba5c5de5 155-158,160-161
+  s_34cee9fc3fc328::t_fe7a1c9711d110 135-138,162
+  s_34cee9fc3fc328::t_eca5c06d8e6f64 206
+  s_34cee9fc3fc328::t_8107a8d6f33e02 124,134
+  s_34cee9fc3fc328::t_560b5821ed00f1 7,23-25,65-67
+  s_34cee9fc3fc328::t_cd36f3373750a9 56-57
+  s_34cee9fc3fc328::t_f1af9574f10201 210-212
+  s_34cee9fc3fc328::t_651661878ed5ff 194
+  s_34cee9fc3fc328::t_c32968037a87e6 20-22
+  s_34cee9fc3fc328::t_a53b76c360abea 61
+  s_34cee9fc3fc328::t_9bbefc27934693 100-101
+  s_34cee9fc3fc328::t_01bec4e9e64452 181
+src-tauri/src/lib.rs
+  s_34cee9fc3fc328::t_2a46da46246614 18-22
+.github/workflows/release.yml
+  s_34cee9fc3fc328::t_ee3fda4e1b7fed 28-39
+  s_34cee9fc3fc328::t_96b6a093627cd2 61-63
+  s_34cee9fc3fc328::t_d7ddefb634961d 82-92
+  s_34cee9fc3fc328::t_e7fa10dccd72f0 7-9
+  s_34cee9fc3fc328::t_8beb5c91bd9441 117-119
+README.md
+  s_34cee9fc3fc328::t_bcfa320c202857 160
+  s_34cee9fc3fc328::t_532a558f7e7a1a 180
+  s_34cee9fc3fc328::t_84fdaab097b817 59
+  s_34cee9fc3fc328::t_1a37925074f6a3 182
+  s_34cee9fc3fc328::t_b6e106f25e8df1 5
+  s_34cee9fc3fc328::t_94e4fed8af05b8 150
+src/components/icons.tsx
+  s_34cee9fc3fc328::t_e357cdfb92ede1 194-201
+src/vite-env.d.ts
+  s_34cee9fc3fc328::t_28e0251cb7c640 1-2
+src/updater.ts
+  s_34cee9fc3fc328::t_f77a16ee6018f1 1-26,29
+  s_34cee9fc3fc328::t_14bc0cb4e91a87 27-28
+src-tauri/capabilities/default.json
+  s_34cee9fc3fc328::t_7810fbf3891829 9
+src/components/SettingsModal.tsx
+  s_34cee9fc3fc328::t_cd9492b4aa6c75 43
+  s_34cee9fc3fc328::t_9e666a9b8232df 5
+  s_34cee9fc3fc328::t_503ae962599cea 1-2,4,7-19,21,26-42,44-93
+  s_34cee9fc3fc328::t_88a7d2921d4611 3,6
+  s_34cee9fc3fc328::t_622e18b9fade6d 20,24
+  s_34cee9fc3fc328::t_d0ea9c8b5cebb7 22-23,25
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_fa58507564cf4d 27-30
+src/useModalFocus.ts
+  s_34cee9fc3fc328::t_954a640a626caa 1-9,15-18,21-25,27-48,58-62
+  s_34cee9fc3fc328::t_b71e4dedad6a64 52-54,57
+  s_34cee9fc3fc328::t_7ae6d12fd208b8 10-14,19-20,26,49,56
+  s_34cee9fc3fc328::t_4b7691bf268c54 50-51,55
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_07bffe528458d1 92-94
+  s_34cee9fc3fc328::t_ec012e39efedf4 6
+docs/auto-update.md
+  s_34cee9fc3fc328::t_417ce7e7f0b2b1 1-48,53-57
+  s_34cee9fc3fc328::t_fa9982a2d3342d 49-52
+  s_34cee9fc3fc328::t_e3d234efc571db 58-75
+src/escStack.ts
+  s_34cee9fc3fc328::t_d3a9e246363d81 1-23
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_5ed4b5cdd09044 31
+  s_34cee9fc3fc328::t_9f468ec36cf1a6 53-58
+package-lock.json
+  s_34cee9fc3fc328::t_0b7ad98b2f24e2 3,9,13,1411-1419
+package.json
+  s_34cee9fc3fc328::t_6e5090f45d0cdb 17
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_d5cc84919d968f 50-58,369,581-590,614,627,798-808,1092-1101,1375-1385,1669-1683,1718,1722,2025-2054,2250-2255,2515,2531-2542,2677-2690,3135,3141-3143,3148,3160-3173,3202-3227,3237-3274,3369,3629-3644,3757-3762,3826-3846,3868,3878,3911-3921,3945,4095-4127,4138,4161,4372-4381,4697-4702,4965-4973,5159-5169,5215-5223,5519,5566-5575,5729-5740
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b1a389a4fc33aaf0190f982bfd60cdf04e9c6358",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash-260828"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
