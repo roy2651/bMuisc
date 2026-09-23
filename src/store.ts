@@ -9,7 +9,7 @@
 // 保存（进歌单/喜欢/库）与播放严格分离：单纯保存不改队列、不打断播放。
 
 import { create } from 'zustand';
-import { hooks, bindReporter, hasSource, loadTrack, needsReload, prefetchTrack, getPrefetched, togglePlay, seek, setVolume, stopAndRelease } from './engine';
+import { hooks, bindReporter, hasSource, loadTrack, needsReload, prefetchTrack, getPrefetched, togglePlay, play as enginePlay, pause as enginePause, seek, setVolume, stopAndRelease } from './engine';
 
 export type LoopMode = 'order' | 'loop' | 'one' | 'random';
 
@@ -157,6 +157,10 @@ export interface PlayerState {
   playAt(uid: string): void;
   playFrom(source: 'favs' | 'all' | string, key: TrackKey): void; // 用该列表整单替换队列并从 key 播放
   toggle(): void;
+  /** 系统媒体键用：明确播放（幂等）。无源/终败时先走加载或重试，其余交给引擎设置意图 */
+  play(): void;
+  /** 系统媒体键用：明确暂停（幂等，连按不会反向恢复播放） */
+  pause(): void;
   next(auto: boolean): void;
   prev(): void;
   seekTo(t: number): void;
@@ -555,6 +559,40 @@ export const usePlayer = create<PlayerState>((set, get) => {
         }
       }
       togglePlay();
+    },
+
+    // 系统媒体键入口：明确的播放意图（幂等）。前置分支与 toggle 共用——无当前项 /
+    // 重启恢复未加载 / 会话终败重试这三类「引擎不能直接开播」的态先承接，其余交给
+    // 引擎设置意图。已在播/解析中/缓冲中都是安全 no-op：不依赖 store 的滞后 playing
+    // 做守卫（媒体指令到达与事件回写之间有异步窗口，守卫翻转会错向）
+    play() {
+      const { tracks, currentId, playing, savedSeek, position } = get();
+      if (!currentId) {
+        if (tracks.length > 0) startTrack(0);
+        return;
+      }
+      if (!playing && !hasSource()) {
+        const index = tracks.findIndex((t) => t.uid === currentId);
+        if (index >= 0) {
+          startTrack(index, savedSeek ?? position);
+          return;
+        }
+      }
+      if (!playing && needsReload()) {
+        const index = tracks.findIndex((t) => t.uid === currentId);
+        if (index >= 0) {
+          // 错误重试：原会话的延续而非新点播，保留最近播放会话标记
+          startTrack(index, get().position, { keepRecentSession: true });
+          return;
+        }
+      }
+      enginePlay();
+    },
+
+    // 系统媒体键入口：明确的暂停意图（幂等）。引擎设置意图并补报，快照由
+    // patchMedia 的播放类立即写承接
+    pause() {
+      enginePause();
     },
 
     next(auto) {

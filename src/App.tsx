@@ -6,6 +6,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { Update } from '@tauri-apps/plugin-updater';
 import type { ViewInfo } from './api';
 import { initEngine, setVolume as syncEngineVolume } from './engine';
+import { initMediaSession, syncMediaSession } from './mediaSession';
 import { usePlayer } from './store';
 import { autoUpdateEnabled, checkForUpdate } from './updater';
 import AddBar from './components/AddBar';
@@ -48,13 +49,18 @@ export default function App() {
         }
       }
     })();
-    // macOS：关窗仅隐藏窗口（后台继续播放），退出只走 Dock 右键 / Cmd+Q；
-    // 其他平台关窗即退出。关闭前强制落盘，最后一次快照可能还挂在 2 秒节流里。
+    // 关窗前强制落盘，最后一次快照可能还挂在 2 秒节流里。
+    // 拦截默认关闭的只限有对应处理的两类平台：Windows（Rust 侧藏进托盘，lib.rs）/
+    // macOS（这里隐藏，退出走 Dock 右键 / Cmd+Q）。必须显式 preventDefault：Tauri
+    // 的 JS 包装在 handler 未拦截时会主动 destroy()，绕过 Rust 侧的 prevent_close
+    // （实测 Windows 直接退了应用）。其余平台不拦截，保留默认关窗退出。
     const isMac = /Mac/i.test(navigator.userAgent);
+    const isWin = /Win/i.test(navigator.userAgent);
     const unListen = getCurrentWindow().onCloseRequested(async (event) => {
       flushSnapshot();
+      if (!isMac && !isWin) return; // 无关窗处理的平台：走默认关闭
+      event.preventDefault();
       if (isMac) {
-        event.preventDefault();
         await getCurrentWindow().hide();
       }
     });
@@ -83,6 +89,37 @@ export default function App() {
       void unListen.then((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 系统媒体控制（mac 媒体键/控制中心 Now Playing、Windows SMTC）：启动即注册
+  // handler，系统指令改走应用内逻辑（不被 WebView 直接作用到 audio 元素）。
+  // play/pause 必须用显式意图入口而非「守卫 + toggle」：store 的 playing 由异步
+  // 媒体事件回写，指令到达时往往还是旧值，翻转语义会错向（连续两条暂停会把刚
+  // 暂停的元素又播起来；解析窗口内的暂停会被吞掉、完成后照样自动开播）
+  useEffect(() => {
+    initMediaSession({
+      play: () => usePlayer.getState().play(),
+      pause: () => usePlayer.getState().pause(),
+      next: () => usePlayer.getState().next(false),
+      prev: () => usePlayer.getState().prev(),
+      seek: (t) => usePlayer.getState().seekTo(t),
+    });
+  }, []);
+
+  // 元数据与播放状态/进度增量同步到系统媒体面板（mediaSession 内部按签名/1s 节流）
+  useEffect(() => {
+    const push = () => {
+      const s = usePlayer.getState();
+      const t = s.tracks.find((x) => x.uid === s.currentId) ?? null;
+      syncMediaSession({
+        track: t ? { key: `${t.bvid}:${t.cid}`, title: t.title, artist: t.up, cover: t.cover } : null,
+        playing: s.playing,
+        position: s.position,
+        duration: s.duration,
+      });
+    };
+    push();
+    return usePlayer.subscribe(push);
   }, []);
 
   // 解析弹窗默认目标：歌单页「添加音乐」的提示 > 上次有效目标 > 全部音乐

@@ -6,6 +6,7 @@
 // 开播（毫秒级出声），未命中走常规解析兜底。签名地址实测约 25 分钟有效，
 // 预取超过 TTL 视为过期丢弃（docs/m0-findings.md §2）。
 
+import { error as logError, info as logInfo } from '@tauri-apps/plugin-log';
 import { proxyPort, resolveStreams, type StreamItem } from './api';
 
 export interface MediaStatePatch {
@@ -34,6 +35,19 @@ type Reporter = (patch: MediaStatePatch) => void;
 let reporter: Reporter = () => {};
 export const hooks: { ended?: () => void } = {};
 
+// 诊断日志：事件时间线落文件（tauri-plugin-log），复现「暂停了声音还在」等疑难后
+// 回头看事件顺序。只记状态 / token / 进度，绝不记媒体 URL（签名后媒体 URL 不落日志）。
+function elog(msg: string): void {
+  const line = `[engine] ${msg}`;
+  console.log(line);
+  void logInfo(line).catch(() => {});
+}
+function elogErr(msg: string): void {
+  const line = `[engine] ${msg}`;
+  console.error(line);
+  void logError(line).catch(() => {});
+}
+
 function report(patch: MediaStatePatch) {
   reporter(patch);
 }
@@ -54,6 +68,8 @@ function makeAudio(): HTMLAudioElement {
 
   // 事件只对当前生效元素 + 当前加载会话上报：切歌后旧曲目的 ended/进度/暂停
   // 一律作废（旧 ended 会按新曲目的位置跳过队列，旧 timeupdate 会污染新曲目进度）
+  // 日志打在会话门控之前：非当前元素（备胎/旧元素）的事件也要留痕，排查「谁在出声」时缺不得
+  const role = () => (el === audio ? 'main' : 'spare');
   el.addEventListener('timeupdate', () => {
     if (el === audio && loadedToken === token) report({ position: el.currentTime });
   });
@@ -69,23 +85,30 @@ function makeAudio(): HTMLAudioElement {
   // play 事件在请求播放时立即触发（此刻往往还在缓冲）；真正出声是 playing 事件。
   // loading 的清除和置回都挂在缓冲状态上，切歌/拖进度时加载提示才能覆盖到出声前。
   el.addEventListener('play', () => {
+    elog(`play ev el=${role()} t=${el.currentTime.toFixed(1)} tok=${token} loaded=${loadedToken}`);
     if (el === audio && loadedToken === token) report({ playing: true });
   });
   el.addEventListener('playing', () => {
+    elog(`playing ev el=${role()} t=${el.currentTime.toFixed(1)} tok=${token} loaded=${loadedToken}`);
     // 真正出声：此前的过渡性播放错误（重试已成功）不再有意义，一并清除
     if (el === audio && loadedToken === token) report({ playing: true, loading: false, error: null });
   });
   el.addEventListener('waiting', () => {
+    elog(`waiting ev el=${role()} t=${el.currentTime.toFixed(1)}`);
     if (el === audio && loadedToken === token) report({ loading: true });
   });
   el.addEventListener('pause', () => {
+    elog(`pause ev el=${role()} t=${el.currentTime.toFixed(1)} tok=${token} loaded=${loadedToken}`);
     if (el === audio && loadedToken === token) report({ playing: false, loading: false });
   });
   el.addEventListener('ended', () => {
+    elog(`ended ev el=${role()} t=${el.currentTime.toFixed(1)}`);
     if (el === audio && loadedToken === token) hooks.ended?.();
   });
   el.addEventListener('error', () => {
-    if (el !== audio || loadedToken !== token || !el.error) return; // 主动清空 src 的中断不算错误
+    if (!el.error) return; // 主动清空 src 的中断不算错误
+    elogErr(`error ev el=${role()} code=${el.error.code} t=${el.currentTime.toFixed(1)}`);
+    if (el !== audio || loadedToken !== token) return; // 主动清空 src 的中断不算错误
     report({
       playing: false,
       loading: false,
@@ -118,6 +141,9 @@ function ensureAnalyser(): void {
     }
   }
   if (audioCtx.state === 'suspended') void audioCtx.resume().catch(() => {});
+  // 上下文没真正跑起来（如系统媒体键触发开播，无用户手势）就不接分析图：
+  // 媒体元素一旦接入挂起的音频图会整路静音——宁可频谱降级为合成波浪，不能无声播放
+  if (audioCtx.state !== 'running') return;
   if (srcNodes.has(audio)) return;
   try {
     const src = audioCtx.createMediaElementSource(audio);
@@ -158,8 +184,20 @@ async function startPlayback(my: number): Promise<boolean> {
   }
   try {
     await audio!.play();
+    // WebKit（mac WKWebView）的已知差异：pause() 不总能取消在途的 play()——
+    // 缓冲/解析完成瞬间按暂停，排队中的 play 仍可能把元素播起来（Windows 的
+    // Chromium 会按规范以 AbortError 取消，走不到这里）。play() 落定后复核
+    // 最新播放意图，已暂停就补停，防止「点了暂停声音还在」。
+    elog(
+      `play() 落定 wantPlay=${wantPlay} mine=${my === token} paused=${audio!.paused} t=${audio!.currentTime.toFixed(1)}`,
+    );
+    if (!wantPlay && my === token) {
+      audio!.pause();
+      report({ playing: false, loading: false });
+    }
     return true;
   } catch (e) {
+    elogErr(`play() 拒绝 name=${e instanceof Error ? e.name : '?'} msg=${e instanceof Error ? e.message : String(e)}`);
     if (my !== token) return true; // 已被更新的加载会话取代：旧拒绝静默作废
     if (!wantPlay) return true; // play() 被 pause() 中断 = 用户暂停意图的预期结果：不报错也不回落重解析
     const msg = e instanceof Error ? e.message : String(e);
@@ -173,6 +211,7 @@ async function startPlayback(my: number): Promise<boolean> {
 export async function loadTrack(bvid: string, cid: number, seekTo?: number): Promise<boolean> {
   if (!audio) throw new Error('引擎未就绪');
   const my = ++token;
+  elog(`load bvid=${bvid} cid=${cid} seek=${seekTo ?? '-'} my=${my}`);
   resolving = false; // 新会话接管解析标记：旧会话的在途解析完成时将被 token 门控拦下，无法自行清理
   wantPlay = true; // 主动加载 = 想播；解析期间用户仍可按暂停改写此意图
   report({ loading: true, error: null });
@@ -189,6 +228,7 @@ export async function loadTrack(bvid: string, cid: number, seekTo?: number): Pro
   // 命中预取：备胎元素已缓冲好头部，直接换元素开播（毫秒级出声）。
   // 备胎媒体已有错误（预取阶段网络失败）则弃用，落入常规路径重新解析。
   if (spare && spare.bvid === bvid && spare.cid === cid && Date.now() - spare.at < PREFETCH_TTL && !spare.el.error) {
+    elog('load 命中预取，换备胎开播');
     const prev = audio;
     audio = spare.el;
     spare = null;
@@ -229,6 +269,7 @@ export async function loadTrack(bvid: string, cid: number, seekTo?: number): Pro
     // 用户点「播放」会被引擎按暂停分支处理（wantPlay=false），取消重试的自动开播
     audio!.pause();
     const msg = e instanceof Error ? e.message : String(e);
+    elogErr(`load 失败 ${msg}`);
     report({ loading: false, playing: false, error: `加载失败：${msg}` });
     return false;
   }
@@ -263,20 +304,41 @@ export function getPrefetched(): { bvid: string; cid: number } | null {
   return { bvid: spare.bvid, cid: spare.cid };
 }
 
+// 系统媒体键等外部指令的明确入口：直接设置意图，不是状态翻转。界面按钮读得到
+// 完整界面状态，用 toggle 翻转即可；系统指令只有「想播/想停」一个语义，且指令
+// 到达与媒体事件回写之间存在异步窗口（store 的 playing 是滞后的）——用状态守卫
+// toggle 会错向（暂停指令连到第二次会把刚暂停的元素又播起来）。显式 set 意图
+// 天然幂等，并覆盖解析/缓冲窗口：解析完成后 startPlayback 按最新意图决定开播与否。
+
+/// 明确播放：已在播/在途 play 是幂等 no-op；解析窗口只改写意图；终败会话不动
+/// 旧源（重试由 store 层 startTrack 承接）。
+export function play() {
+  if (!audio || !audio.src) return;
+  elog(`play 意图 paused=${audio.paused} resolving=${resolving} tok=${token} loaded=${loadedToken}`);
+  wantPlay = true;
+  // 媒体键场景无用户手势：ensureAnalyser 在上下文未运行时不接分析图（防静音），频谱降级可接受
+  ensureAnalyser();
+  if (resolving) return; // 解析在途：意图已记录，新源就绪后 startPlayback 自动开播
+  if (loadedToken !== token || audio.error) return; // 兜底防线：终败会话/报错媒体的旧源绝不恢复出声（会播错歌或再拒一次）
+  if (!audio.paused) return; // 已在播（或 play 已在途）：幂等
+  void startPlayback(token);
+}
+
+/// 明确暂停：播放/缓冲/解析在途各阶段都安全；连按不会反向恢复播放。
+export function pause() {
+  if (!audio) return;
+  elog(`pause 意图 paused=${audio.paused} resolving=${resolving} tok=${token} loaded=${loadedToken}`);
+  wantPlay = false; // 记录暂停意图：进行中的解析完成后不得自动开播
+  if (!audio.paused) audio.pause();
+  // 解析窗口/失败会话内旧元素的 pause 事件被会话门控丢弃：手动补报，避免界面停留在播放态
+  if (loadedToken !== token) report({ playing: false });
+}
+
 export function togglePlay() {
   if (!audio || !audio.src) return;
-  if (audio.paused) {
-    wantPlay = true;
-    ensureAnalyser(); // 用户手势内恢复上下文，频谱随播放可用
-    if (resolving) return; // 解析在途：只改写播放意图，新源就绪后 startPlayback 自动开播；不恢复旧元素出声
-    if (loadedToken !== token || audio.error) return; // 兜底防线：终败会话/报错媒体的旧源绝不恢复出声（会播错歌或再拒一次），主入口在 store 层改走重试
-    void startPlayback(token); // 统一开播收尾：play() 被拒落到明确错误态，不再有未处理拒绝
-  } else {
-    wantPlay = false; // 记录暂停意图：进行中的解析完成后不得自动开播
-    audio.pause();
-    // 解析窗口/失败会话内旧元素的 pause 事件被会话门控丢弃：手动补报，避免界面停留在播放态
-    if (loadedToken !== token) report({ playing: false });
-  }
+  elog(`toggle paused=${audio.paused} resolving=${resolving} tok=${token} loaded=${loadedToken} err=${audio.error?.code ?? '-'}`);
+  if (audio.paused) play();
+  else pause();
 }
 
 export function hasSource(): boolean {
@@ -312,6 +374,7 @@ export function setVolume(v: number) {
 export function stopAndRelease() {
   token++;
   preToken++;
+  elog(`stopAndRelease my=${token}`);
   resolving = false; // 会话终止：在途解析完成时将被 token 门控拦下，此处代为清理
   if (spare) {
     clearElement(spare.el); // 真正停掉备胎的媒体加载：丢引用不等于停止拉流
