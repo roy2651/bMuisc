@@ -4,6 +4,9 @@
 #
 # 注意：macOS 包未做 Apple 签名公证，用户首次打开需右键 → 打开（或
 # `xattr -cr /Applications/bMuisc.app` 移除隔离标记），否则 Gatekeeper 拦截。
+#
+# 自动更新：tauri-action 检测到 TAURI_SIGNING_PRIVATE_KEY(+)PASSWORD 两个 Secrets
+# 后自动签名安装包并生成 latest.json；缺失时构建失败，不会静默发未签名更新。
 
 name: Release
 
@@ -21,6 +24,18 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # 守门：latest.json 的版本号取自 tauri.conf.json（不是 tag）。忘了 bump 版本
+      # 就打 tag 会发布一个"版本号没变"的更新，所有客户端静默显示"已是最新"
+      - name: Ensure tag matches app version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          v=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME 与 tauri.conf.json 版本 v$v 不一致：先 bump 版本再打 tag"
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,6 +58,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 更新包签名密钥：有这两个变量时 tauri-action 会生成 .sig 签名并自动产出 latest.json
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # 仅在 tag 触发时发布 Release；手动触发（分支 ref）tagName 为空 = 只构建校验
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
@@ -60,6 +78,17 @@ jobs:
           - target: x86_64-apple-darwin # Intel
     steps:
       - uses: actions/checkout@v4
+
+      # 与 Windows job 相同的守门：tag 必须与 tauri.conf.json 版本一致
+      - name: Ensure tag matches app version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          v=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME 与 tauri.conf.json 版本 v$v 不一致：先 bump 版本再打 tag"
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -85,6 +114,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 更新包签名密钥：有这两个变量时 tauri-action 会生成 .sig 签名并自动产出 latest.json
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: 'bMuisc ${{ github.ref_name }}'

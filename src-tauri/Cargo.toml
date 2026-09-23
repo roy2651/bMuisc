@@ -24,6 +24,10 @@ reqwest = { version = "0.12", default-features = false, features = ["native-tls"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 axum = { version = "0.8", features = ["http1"] }
 
+# 自动更新（仅桌面端编译）：GitHub Releases latest.json + minisign 签名校验
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-updater = "2"
+
 [profile.release]
 strip = true
 lto = true

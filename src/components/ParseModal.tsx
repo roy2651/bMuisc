@@ -3,6 +3,7 @@
 // 提交前显示重复预览；新建歌单在最终提交时才创建，中途关闭不留空歌单。
 import { useEffect, useMemo, useState } from 'react';
 import type { ViewInfo } from '../api';
+import { registerEsc } from '../escStack';
 import { keyOf, usePlayer, type AddTarget, type Track } from '../store';
 import { fmtDur } from '../util';
 import PlaylistPicker from './PlaylistPicker';
@@ -88,15 +89,9 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
   // 全部已存在且不立即播放：无事可做；新建歌单必须先有名称
   const submittable = count > 0 && (newMode ? newName.trim().length > 0 : freshCount > 0 || playNow);
 
-  // Esc 关闭弹窗；isComposing 排除输入法用 Esc 取消候选词的情况（mac 会以 Escape 上报）
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Esc 关闭弹窗；走共享栈（escStack），多弹窗叠加时只关最上层，
+  // isComposing 排除输入法用 Esc 取消候选词的情况（mac 会以 Escape 上报）
+  useEffect(() => registerEsc(onClose), [onClose]);
 
   function submit() {
     if (!submittable) return;

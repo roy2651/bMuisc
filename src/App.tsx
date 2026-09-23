@@ -3,24 +3,30 @@
 import { useEffect, useState } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import type { Update } from '@tauri-apps/plugin-updater';
 import type { ViewInfo } from './api';
 import { initEngine, setVolume as syncEngineVolume } from './engine';
 import { usePlayer } from './store';
+import { autoUpdateEnabled, checkForUpdate } from './updater';
 import AddBar from './components/AddBar';
 import NowPlaying from './components/NowPlaying';
 import ParseModal from './components/ParseModal';
 import PlayerBar from './components/PlayerBar';
 import QueuePanel from './components/QueuePanel';
+import SettingsModal from './components/SettingsModal';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import TrackView from './components/TrackView';
-import { IconX, LogoMark } from './components/icons';
+import UpdateModal from './components/UpdateModal';
+import { IconSettings, IconX, LogoMark } from './components/icons';
 
 export default function App() {
   const { tracks, currentId, playing, loading, error, dismissError, restore, confirmAdd, flushSnapshot, view, queueOpen, playlists, lastSaveTo, parseTargetHint, setParseTargetHint } = usePlayer();
   const [parsed, setParsed] = useState<ViewInfo | null>(null);
   const [input, setInput] = useState('');
   const [version, setVersion] = useState('');
+  const [update, setUpdate] = useState<Update | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const track = tracks.find((t) => t.uid === currentId) ?? null;
 
   // 恢复上次记录（只读 localStorage，不依赖引擎——若被引擎初始化门控，
@@ -55,8 +61,25 @@ export default function App() {
     getVersion()
       .then((v) => !cancelled && setVersion(v))
       .catch(() => {});
+    // 启动检查更新：稍作停顿再查（避开启动期的解析/代理请求），仅 Windows
+    // 生产构建生效，设置里可关；检查失败静默，不打扰正常使用。
+    // 触发时再读一次开关：用户若在启动数秒内关掉自动检查，已排队的检查不再执行
+    let updateTimer: number | undefined;
+    updateTimer = window.setTimeout(() => {
+      if (!autoUpdateEnabled()) return;
+      checkForUpdate()
+        // prev ?? u：已有更新弹窗（如设置里手动检查到的）时不让迟到的启动
+        // 检查覆盖——否则下载进行中换实例，显示与下载对象错位，旧实例还会
+        // 因下载进行中被跳过释放
+        .then((u) => {
+          if (cancelled || !u) return;
+          setUpdate((prev) => prev ?? u);
+        })
+        .catch(() => {});
+    }, 6000);
     return () => {
       cancelled = true;
+      window.clearTimeout(updateTimer);
       void unListen.then((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,6 +110,9 @@ export default function App() {
           onFail={clearHint} // 解析失败：目标提示不再跨次生效，避免下次无关解析默认到遗留歌单
         />
         {version && <span className="version-chip">v{version}</span>}
+        <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="设置" aria-label="设置">
+          <IconSettings />
+        </button>
       </header>
 
       {error && (
@@ -125,6 +151,10 @@ export default function App() {
           }}
         />
       )}
+      {settingsOpen && (
+        <SettingsModal version={version} onClose={() => setSettingsOpen(false)} onFoundUpdate={setUpdate} />
+      )}
+      {update && <UpdateModal update={update} onClose={() => setUpdate(null)} />}
       <Toast />
     </div>
   );

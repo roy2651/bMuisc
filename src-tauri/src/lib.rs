@@ -15,7 +15,11 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
-        .setup(|_| {
+        .setup(|app| {
+            // 自动更新插件（仅桌面端编译，依赖也按桌面 target 划分）：
+            // 检查与下载都在 Rust 侧进行，更新入口由前端按平台自行 gating
+            #[cfg(desktop)]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             tauri::async_runtime::spawn(async {
                 if let Err(e) = proxy::spawn().await {
                     eprintln!("本地媒体代理启动失败: {e}");

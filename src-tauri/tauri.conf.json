@@ -28,6 +28,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "app", "dmg"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -48,6 +49,12 @@
       "dmg": {
         "background": "icons/dmg-background.png"
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ5QkFEMjM2NUI4NDAyMDgKUldRSUFvUmJOdEs2MmJFOEdBL0Jjak1mQ1NPZFhoZlJ6bFh1V0NPTkFSc1owd1hIYzZ2L1RYbWcK",
+      "endpoints": ["https://github.com/roy2651/bMuisc/releases/latest/download/latest.json"]
     }
   }
 }

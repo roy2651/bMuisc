@@ -977,3 +977,48 @@ img { -webkit-user-drag: none; }
   flex: none;
 }
 .playnow-check input { accent-color: var(--accent); }
+
+/* ---- 设置弹窗与更新进度 ---- */
+/* 弹窗容器由 useModalFocus 接管焦点（tabIndex=-1），不显示焦点框 */
+.modal:focus { outline: none; }
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.set-row:last-of-type { border-bottom: none; }
+.set-row > div { min-width: 0; }
+.set-label { margin: 0 0 3px; font-size: 13.5px; }
+.set-desc { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text3); }
+.set-row input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+
+.upd-head p { font-size: 12.5px; }
+.upd-notes {
+  max-height: 170px;
+  overflow: auto;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--panel);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.upd-progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-hover);
+  overflow: hidden;
+}
+.upd-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--grad);
+  transition: width 0.25s ease;
+}
+.upd-status { margin: 10px 2px 0; font-size: 12.5px; color: var(--text2); }
+.upd-error { margin: 10px 2px 0; font-size: 12.5px; color: #ff8a8a; }
