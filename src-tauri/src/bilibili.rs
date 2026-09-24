@@ -8,7 +8,7 @@ use std::time::Duration;
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
-fn client() -> &'static reqwest::Client {
+pub(crate) fn client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
@@ -21,6 +21,73 @@ fn client() -> &'static reqwest::Client {
             .build()
             .expect("reqwest client")
     })
+}
+
+/// 接口错误码转人话（登录态接口的 -101/-111 在这里统一翻译）
+fn json_err(v: &serde_json::Value) -> String {
+    match v["code"].as_i64() {
+        Some(-101) => "登录已过期，请重新扫码".into(),
+        Some(-111) => "登录校验失败，请重新扫码".into(),
+        Some(-403) => "没有访问权限".into(),
+        Some(11010) => "内容不存在或已失效".into(),
+        Some(c) => format!("接口返回 {c}: {}", v["message"].as_str().unwrap_or("未知错误")),
+        None => "响应格式异常".into(),
+    }
+}
+
+/// 带登录态的 GET（Cookie 可选）：单次请求，错误码直接透传（-101 过期必须如实上报，
+/// 不能像匿名接口那样盲目重试）。fav/passport 系列共用。
+pub(crate) async fn api_json(url: &str, cookie: Option<&str>) -> Result<serde_json::Value, String> {
+    let mut req = client().get(url);
+    if let Some(c) = cookie {
+        req = req.header(reqwest::header::COOKIE, c);
+    }
+    let resp = req.send().await.map_err(|e| format!("网络请求失败: {e}"))?;
+    let v: serde_json::Value = resp.json().await.map_err(|e| format!("响应解析失败: {e}"))?;
+    if v["code"].as_i64() == Some(0) {
+        return Ok(v);
+    }
+    // 概率性 -400（匿名接口同款风控）：有限重试
+    if v["code"].as_i64() == Some(-400) {
+        for _ in 0..2 {
+            tokio::time::sleep(Duration::from_millis(800)).await;
+            let mut req = client().get(url);
+            if let Some(c) = cookie {
+                req = req.header(reqwest::header::COOKIE, c);
+            }
+            let resp = req.send().await.map_err(|e| format!("网络请求失败: {e}"))?;
+            let v: serde_json::Value = resp.json().await.map_err(|e| format!("响应解析失败: {e}"))?;
+            if v["code"].as_i64() == Some(0) {
+                return Ok(v);
+            }
+            if v["code"].as_i64() != Some(-400) {
+                return Err(json_err(&v));
+            }
+        }
+        return Err("接口返回 -400（已重试）".into());
+    }
+    Err(json_err(&v))
+}
+
+/// 带登录态的 POST（表单）：收藏夹新建 / 收藏视频等写操作，csrf 参数由调用方携带
+pub(crate) async fn api_form(
+    url: &str,
+    cookie: &str,
+    form: &[(&str, String)],
+) -> Result<serde_json::Value, String> {
+    let resp = client()
+        .post(url)
+        .header(reqwest::header::COOKIE, cookie)
+        .form(form)
+        .send()
+        .await
+        .map_err(|e| format!("网络请求失败: {e}"))?;
+    let v: serde_json::Value = resp.json().await.map_err(|e| format!("响应解析失败: {e}"))?;
+    if v["code"].as_i64() == Some(0) {
+        Ok(v)
+    } else {
+        Err(json_err(&v))
+    }
 }
 
 /// 接口调用：匿名 + 概率性 -400 有限重试（见 docs/m0-findings.md §2.1）
@@ -89,6 +156,7 @@ pub struct SeasonInfo {
 #[serde(rename_all = "camelCase")]
 pub struct ViewInfo {
     pub bvid: String,
+    pub aid: u64, // 稿件 id：收藏写回（fav/resource/deal 的 rid）必需
     pub title: String,
     pub owner: String,
     pub cover: String,
@@ -184,6 +252,7 @@ pub async fn view(bvid: &str) -> Result<ViewInfo, String> {
     });
     Ok(ViewInfo {
         bvid: d["bvid"].as_str().unwrap_or(bvid).to_string(),
+        aid: d["aid"].as_u64().unwrap_or(0),
         title: d["title"].as_str().unwrap_or("未知标题").to_string(),
         owner: d["owner"]["name"].as_str().unwrap_or("未知 UP 主").to_string(),
         cover,

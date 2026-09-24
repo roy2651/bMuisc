@@ -1,9 +1,10 @@
 // 「添加音乐」弹窗：单曲 / 多分 P / 合集统一入口。
 // 目标选择器常驻底部（默认目标由进入路径决定：歌单页 → 该歌单；全局 → 上次目标），
 // 提交前显示重复预览；新建歌单在最终提交时才创建，中途关闭不留空歌单。
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ViewInfo } from '../api';
 import { registerEsc } from '../escStack';
+import { useModalFocus } from '../useModalFocus';
 import { keyOf, usePlayer, type AddTarget, type Track } from '../store';
 import { fmtDur } from '../util';
 import PlaylistPicker from './PlaylistPicker';
@@ -35,7 +36,10 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
   const libOrder = usePlayer((s) => s.libOrder);
 
   const q = filter.trim().toLowerCase();
-  const filteredPages = q ? view.pages.filter((p) => p.part.toLowerCase().includes(q)) : view.pages;
+  // 搜索匹配展示名：多 P 按 P 名，单 P 按视频标题（与下方列表展示一致）
+  const filteredPages = q
+    ? view.pages.filter((p) => (hasMultiP ? p.part : view.title).toLowerCase().includes(q))
+    : view.pages;
   const eps = view.season?.episodes ?? [];
   const filteredEps = q ? eps.filter((e) => e.title.toLowerCase().includes(q)) : eps;
 
@@ -44,10 +48,11 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
       return view.pages
         .filter((p) => checkedPages.has(p.page))
         .map((p) => ({
-          // 歌名 = 分 P 自己的标题（通常就是歌名）；视频大标题降级为来源信息
+          // 多 P：歌名 = 分 P 自己的标题（P 名即歌名），视频大标题降级为来源；
+          // 单 P：直接用视频标题——P 名可能是上传者没改的文件名（如 "9月22日(13)"），没有可读性
           bvid: view.bvid,
           cid: p.cid,
-          title: p.part || view.title,
+          title: hasMultiP ? p.part || view.title : view.title,
           up: view.owner,
           cover: view.cover,
           duration: p.duration,
@@ -92,6 +97,8 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
   // Esc 关闭弹窗；走共享栈（escStack），多弹窗叠加时只关最上层，
   // isComposing 排除输入法用 Esc 取消候选词的情况（mac 会以 Escape 上报）
   useEffect(() => registerEsc(onClose), [onClose]);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalFocus(modalRef); // Tab 限制在弹窗内，不穿透到背景（审查 R6）
 
   function submit() {
     if (!submittable) return;
@@ -100,7 +107,7 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
 
   return (
     <div className="modal-mask" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal" tabIndex={-1} ref={modalRef} role="dialog" aria-modal="true" aria-label="添加音乐" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="关闭">
           <IconX />
         </button>
@@ -171,7 +178,7 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
                       setCheckedPages(next);
                     }}
                   />
-                  <span className="pick-title">{hasMultiP ? `P${p.page} ${p.part}` : p.part}</span>
+                  <span className="pick-title">{hasMultiP ? `P${p.page} ${p.part}` : view.title}</span>
                   <span className="pick-dur">{fmtDur(p.duration)}</span>
                 </label>
               ))

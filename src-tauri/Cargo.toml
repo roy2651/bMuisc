@@ -23,6 +23,9 @@ regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json", "stream"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 axum = { version = "0.8", features = ["http1"] }
+# 账号凭证安全存储：Windows 凭据管理器 / macOS 钥匙串（SESSDATA 绝不明文落盘，见 docs/login-fav-research.md §2）
+keyring = { version = "3", features = ["windows-native", "apple-native"] }
+log = "0.4"
 
 # 桌面端插件：自动更新（GitHub Releases latest.json + minisign 签名校验）
 # + 文件日志（引擎/媒体事件时间线落盘，排查 mac 暂停等疑难时「回头看」）

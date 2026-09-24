@@ -98,6 +98,32 @@ export const IconPlus = ({ size }: IconProps) => (
   </svg>
 );
 
+// 同步B站收藏夹：双向循环箭头（读 = 导入为本地歌单，写 = 推送回收藏夹）
+export const IconSync = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M20 11a8 8 0 0 0-14.9-3" />
+    <path d="m2.5 13a8 8 0 0 0 14.9 3" />
+    <path d="M5 4v4h4" />
+    <path d="M19 20v-4h-4" />
+  </svg>
+);
+
+// 用户：头像缺省占位
+export const IconUser = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="8.2" r="3.6" />
+    <path d="M4.8 19.4a7.2 7.2 0 0 1 14.4 0" />
+  </svg>
+);
+
+// 私密收藏夹
+export const IconLock = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <rect x="5.5" y="10.5" width="13" height="9" rx="2" />
+    <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+  </svg>
+);
+
 export const IconTrash = ({ size }: IconProps) => (
   <svg {...base(size)}>
     <path d="M4 7h16M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9L17.5 7" />

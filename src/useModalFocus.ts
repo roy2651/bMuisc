@@ -19,7 +19,8 @@ export function useModalFocus(containerRef: RefObject<HTMLElement | null>) {
     const token = {};
     trapStack.push(token);
     const prev = document.activeElement as HTMLElement | null;
-    el.focus();
+    // 容器内已有焦点（input autoFocus 先于 effect 生效）时不抢：聚焦输入框优先
+    if (!el.contains(document.activeElement)) el.focus();
     // capture 挂 window：无论焦点此刻在哪（弹窗内/外），Tab 都先经过这里
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;

@@ -1,8 +1,9 @@
 // 右侧播放队列抽屉：接下来播什么。独立于左侧浏览与歌单——
 // 保留完整队列操作（播放、上/下移、移除、清空、定位当前、撤销清空）。
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { keyOf, usePlayer } from '../store';
 import { fmtDur } from '../util';
+import ConfirmModal from './ConfirmModal';
 import ThumbImg from './ThumbImg';
 import { IconArrowDown, IconArrowUp, IconHeart, IconHeartFilled, IconLocate, IconTrash, IconX } from './icons';
 
@@ -19,15 +20,8 @@ function EqBars() {
 export default function QueuePanel() {
   const s = usePlayer();
   const { tracks, favs, currentId, playing } = s;
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
-
-  // 确认态 3 秒无操作自动还原，避免停在待确认状态
-  useEffect(() => {
-    if (!confirmClear) return;
-    const t = setTimeout(() => setConfirmClear(false), 3000);
-    return () => clearTimeout(t);
-  }, [confirmClear]);
 
   function locateCurrent() {
     listRef.current?.querySelector('.queue-row.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -46,19 +40,8 @@ export default function QueuePanel() {
             </button>
           )}
           {tracks.length > 0 && (
-            <button
-              className={`btn ghost sm${confirmClear ? ' danger' : ''}`}
-              onClick={() => {
-                if (!confirmClear) {
-                  setConfirmClear(true);
-                  return;
-                }
-                setConfirmClear(false);
-                s.clear();
-              }}
-              title={confirmClear ? '再次点击确认清空' : '清空队列'}
-            >
-              <IconTrash size={14} /> {confirmClear ? '确认清空？' : '清空'}
+            <button className="btn ghost sm" onClick={() => setClearOpen(true)} title="清空队列">
+              <IconTrash size={14} /> 清空
             </button>
           )}
         </div>
@@ -122,6 +105,16 @@ export default function QueuePanel() {
             );
           })}
         </ul>
+      )}
+      {clearOpen && (
+        <ConfirmModal
+          title="清空播放队列"
+          body={`将移除队列中的 ${tracks.length} 首歌；清空后可点「撤销清空」恢复。`}
+          confirmText="清空"
+          danger
+          onConfirm={() => s.clear()}
+          onClose={() => setClearOpen(false)}
+        />
       )}
     </aside>
   );

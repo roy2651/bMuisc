@@ -7,11 +7,17 @@ import type { Update } from '@tauri-apps/plugin-updater';
 import type { ViewInfo } from './api';
 import { initEngine, setVolume as syncEngineVolume } from './engine';
 import { initMediaSession, syncMediaSession } from './mediaSession';
+import { useSession } from './session';
 import { usePlayer } from './store';
 import { autoUpdateEnabled, checkForUpdate } from './updater';
+import { useUiBus } from './uiBus';
 import AddBar from './components/AddBar';
+import AccountMenu from './components/AccountMenu';
+import FavImportModal from './components/FavImportModal';
+import FavPushModal from './components/FavPushModal';
 import NowPlaying from './components/NowPlaying';
 import ParseModal from './components/ParseModal';
+import LoginQrModal from './components/LoginQrModal';
 import PlayerBar from './components/PlayerBar';
 import QueuePanel from './components/QueuePanel';
 import SettingsModal from './components/SettingsModal';
@@ -27,7 +33,15 @@ export default function App() {
   const [input, setInput] = useState('');
   const [version, setVersion] = useState('');
   const [update, setUpdate] = useState<Update | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = useUiBus((s) => s.settingsOpen);
+  const openSettings = useUiBus((s) => s.openSettings);
+  const closeSettings = useUiBus((s) => s.closeSettings);
+  const qrOpen = useUiBus((s) => s.qrOpen);
+  const closeQr = useUiBus((s) => s.closeQr);
+  const importOpen = useUiBus((s) => s.importOpen);
+  const closeImport = useUiBus((s) => s.closeImport);
+  const pushFor = useUiBus((s) => s.pushFor);
+  const closePush = useUiBus((s) => s.closePush);
   const track = tracks.find((t) => t.uid === currentId) ?? null;
 
   // 恢复上次记录（只读 localStorage，不依赖引擎——若被引擎初始化门控，
@@ -91,6 +105,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 登录状态启动查询一次（设置弹窗打开时会再查，保证新鲜）
+  useEffect(() => {
+    void useSession.getState().refresh();
+  }, []);
+
+  // 屏蔽 WebView 默认右键菜单（图片「另存为」等网页语义在桌面应用里突兀）
+  useEffect(() => {
+    const onCtx = (e: MouseEvent) => e.preventDefault();
+    document.addEventListener('contextmenu', onCtx);
+    return () => document.removeEventListener('contextmenu', onCtx);
+  }, []);
+
   // 系统媒体控制（mac 媒体键/控制中心 Now Playing、Windows SMTC）：启动即注册
   // handler，系统指令改走应用内逻辑（不被 WebView 直接作用到 audio 元素）。
   // play/pause 必须用显式意图入口而非「守卫 + toggle」：store 的 playing 由异步
@@ -147,7 +173,8 @@ export default function App() {
           onFail={clearHint} // 解析失败：目标提示不再跨次生效，避免下次无关解析默认到遗留歌单
         />
         {version && <span className="version-chip">v{version}</span>}
-        <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="设置" aria-label="设置">
+        <AccountMenu />
+        <button className="icon-btn" onClick={openSettings} title="设置" aria-label="设置">
           <IconSettings />
         </button>
       </header>
@@ -188,9 +215,10 @@ export default function App() {
           }}
         />
       )}
-      {settingsOpen && (
-        <SettingsModal version={version} onClose={() => setSettingsOpen(false)} onFoundUpdate={setUpdate} />
-      )}
+      {settingsOpen && <SettingsModal version={version} onClose={closeSettings} onFoundUpdate={setUpdate} />}
+      {qrOpen && <LoginQrModal onClose={closeQr} />}
+      {importOpen && <FavImportModal onClose={closeImport} />}
+      {pushFor && <FavPushModal playlistId={pushFor} onClose={closePush} />}
       {update && <UpdateModal update={update} onClose={() => setUpdate(null)} />}
       <Toast />
     </div>

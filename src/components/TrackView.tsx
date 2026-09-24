@@ -5,10 +5,14 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { keyOf, usePlayer, type LibTrack, type TrackKey } from '../store';
+import { useSession } from '../session';
+import { useUiBus } from '../uiBus';
 import { fmtDur } from '../util';
+import ConfirmModal from './ConfirmModal';
+import NewPlaylistModal from './NewPlaylistModal';
 import PlaylistPicker from './PlaylistPicker';
 import ThumbImg from './ThumbImg';
-import { IconHeart, IconHeartFilled, IconHistory, IconMore, IconMusic, IconPlay, IconPlus, IconSearch, IconX } from './icons';
+import { IconHeart, IconHeartFilled, IconHistory, IconMore, IconMusic, IconPlay, IconPlus, IconSearch, IconSync, IconX } from './icons';
 
 interface Row {
   item: LibTrack;
@@ -31,10 +35,12 @@ export default function TrackView() {
   const [filter, setFilter] = useState('');
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
-  const [confirmDel, setConfirmDel] = useState(false);
-  // 行内菜单：main = 主操作；pick = 选择目标歌单；new = 新建歌单输入
-  const [menu, setMenu] = useState<{ key: TrackKey; mode: 'main' | 'pick' | 'new' } | null>(null);
-  const [newName, setNewName] = useState('');
+  // 删除类操作统一弹确认框：歌单删除 / 从曲库删除单曲
+  const [delPlOpen, setDelPlOpen] = useState(false);
+  const [delKey, setDelKey] = useState<TrackKey | null>(null);
+  const [newPlKey, setNewPlKey] = useState<TrackKey | null>(null); // 经新建歌单弹窗添加的曲目
+  // 行内菜单：main = 主操作；pick = 选择目标歌单
+  const [menu, setMenu] = useState<{ key: TrackKey; mode: 'main' | 'pick' } | null>(null);
   const [headMenu, setHeadMenu] = useState(false);
 
   const viewId = view.kind === 'playlist' ? view.id : '';
@@ -42,17 +48,15 @@ export default function TrackView() {
   useEffect(() => {
     setFilter('');
     setRenaming(false);
-    setConfirmDel(false);
+    setDelPlOpen(false);
+    setDelKey(null);
+    setNewPlKey(null);
     setMenu(null);
     setHeadMenu(false);
   }, [view.kind, viewId]);
 
-  // 菜单关即解除删除确认：两步确认不能跨开合残留（否则重开菜单单击即删）
-  useEffect(() => {
-    if (!headMenu) setConfirmDel(false);
-  }, [headMenu]);
-
   const pl = view.kind === 'playlist' ? playlists.find((p) => p.id === view.id) : null;
+  const loggedIn = useSession((s) => s.state?.loggedIn ?? false);
   const source = view.kind === 'favs' ? 'favs' : view.kind === 'all' ? 'all' : view.kind === 'recent' ? 'recent' : pl?.id ?? '';
   const keys = view.kind === 'all' ? libOrder : view.kind === 'favs' ? favs : view.kind === 'recent' ? recent : pl?.keys ?? [];
   const rows: Row[] = keys.flatMap((k) => (lib[k] ? [{ item: lib[k], key: k }] : []));
@@ -110,25 +114,6 @@ export default function TrackView() {
     s.notify(n > 0 ? `已添加 1 首到「${name}」` : '这首歌已在此歌单', n > 0 ? { label: '查看歌单', run: () => s.setView({ kind: 'playlist', id: target }) } : undefined);
   }
 
-  // 行菜单 → 新建歌单：同名不静默合并——提示并使用已有歌单
-  function createAndAdd() {
-    if (!menu) return;
-    const name = newName.trim();
-    if (!name) return;
-    const item = lib[menu.key];
-    if (!item) return;
-    const exist = playlists.find((p) => p.name === name);
-    const id = exist ? exist.id : s.createPlaylist(name);
-    const n = s.addToPlaylist(id, [item]);
-    setMenu(null);
-    setNewName('');
-    s.notify(
-      exist ? `已使用歌单「${name}」` : `已添加 1 首到「${name}」`,
-      { label: '查看歌单', run: () => s.setView({ kind: 'playlist', id }) },
-    );
-    if (n === 0) s.notify('这首歌已在此歌单');
-  }
-
   const listTitle = view.kind === 'all' ? '全部音乐' : view.kind === 'favs' ? '我的喜欢' : view.kind === 'recent' ? '最近播放' : pl?.name ?? '';
   const cover = rows[0]?.item.cover ?? null;
   const headTile =
@@ -182,6 +167,7 @@ export default function TrackView() {
           )}
           <p className="list-meta">
             {rows.length} 首{rows.length > 0 ? ` · 共 ${fmtDur(totalDur)}` : ''}
+            {view.kind === 'playlist' && pl?.biliMlid && <span className="bili-badge">已关联B站收藏夹</span>}
           </p>
           <div className="list-actions">
             <button className="btn accent sm" disabled={rows.length === 0} onClick={playAll}>
@@ -190,6 +176,12 @@ export default function TrackView() {
             <button className="btn sm" onClick={addMusic}>
               <IconPlus size={14} /> 添加音乐
             </button>
+            {/* 写回B站收藏夹：常驻按钮（登录后可见）；分P合并/幂等语义见 FavPushModal */}
+            {view.kind === 'playlist' && pl && loggedIn && (
+              <button className="btn sm" onClick={() => useUiBus.getState().openPush(pl.id)}>
+                <IconSync size={13} /> 推送到B站
+              </button>
+            )}
             {view.kind === 'playlist' && (
               <button className={`icon-btn sm${headMenu ? ' on' : ''}`} title="更多操作" onClick={() => setHeadMenu((v) => !v)}>
                 <IconMore size={16} />
@@ -210,17 +202,14 @@ export default function TrackView() {
                     重命名
                   </button>
                   <button
-                    className={confirmDel ? 'danger' : ''}
-                    title="不会删除音乐库中的歌曲"
+                    className="danger"
+                    title="仅属于此歌单的音乐会一并从曲库移除"
                     onClick={() => {
-                      if (!confirmDel) {
-                        setConfirmDel(true);
-                        return;
-                      }
-                      s.deletePlaylist(pl.id);
+                      setHeadMenu(false);
+                      setDelPlOpen(true);
                     }}
                   >
-                    {confirmDel ? '确认删除？' : '删除歌单'}
+                    删除歌单
                   </button>
                 </div>
               </>
@@ -313,14 +302,13 @@ export default function TrackView() {
                     mode={menu.mode}
                     plView={view.kind === 'playlist'}
                     recentView={view.kind === 'recent'}
-                    newName={newName}
-                    dupName={playlists.some((p) => p.name === newName.trim())}
+                    libView={view.kind === 'all'}
                     onMain={() => setMenu({ key: r.key, mode: 'pick' })}
                     onPick={pickTarget}
-                    onNew={() => setMenu({ key: r.key, mode: 'new' })}
-                    onNewName={setNewName}
-                    onNewConfirm={createAndAdd}
-                    onNewCancel={() => setMenu({ key: r.key, mode: 'main' })}
+                    onNew={() => {
+                      setMenu(null);
+                      setNewPlKey(r.key);
+                    }}
                     onNext={() => {
                       const item = lib[r.key];
                       if (item) s.playNext([item]);
@@ -339,6 +327,10 @@ export default function TrackView() {
                       s.removeFromRecent(r.key);
                       setMenu(null);
                     }}
+                    onRemoveFromLib={() => {
+                      setMenu(null);
+                      setDelKey(r.key);
+                    }}
                     onOpen={() => {
                       void openUrl(`https://www.bilibili.com/video/${r.item.bvid}/`);
                       setMenu(null);
@@ -351,27 +343,66 @@ export default function TrackView() {
           })}
         </ul>
       )}
+
+      {/* 删除类操作统一确认弹窗 */}
+      {delPlOpen && pl && (
+        <ConfirmModal
+          title="删除歌单"
+          body={`歌单「${pl.name}」将被删除。仅属于此歌单、且未被「我的喜欢」或其他歌单引用的音乐会一并从曲库移除；B站收藏夹不受影响。`}
+          confirmText="删除"
+          danger
+          onConfirm={() => s.deletePlaylist(pl.id)}
+          onClose={() => setDelPlOpen(false)}
+        />
+      )}
+      {delKey !== null && lib[delKey] && (
+        <ConfirmModal
+          title="从音乐库删除"
+          body={`《${lib[delKey].title}》将从曲库移除，「我的喜欢」与最近播放里的记录一并清理；不影响当前播放队列。`}
+          confirmText="删除"
+          danger
+          onConfirm={() => {
+            s.removeFromLib([delKey]);
+            s.notify('已从音乐库删除');
+          }}
+          onClose={() => setDelKey(null)}
+        />
+      )}
+      {newPlKey !== null && (
+        <NewPlaylistModal
+          confirmText="创建并添加"
+          onCreated={(id, existed) => {
+            const item = lib[newPlKey];
+            setNewPlKey(null);
+            if (!item) return;
+            const n = s.addToPlaylist(id, [item]);
+            const name = usePlayer.getState().playlists.find((p) => p.id === id)?.name ?? '歌单';
+            s.notify(
+              existed ? `已使用歌单「${name}」` : n > 0 ? `已添加 1 首到「${name}」` : '这首歌已在此歌单',
+              n > 0 && !existed ? { label: '查看歌单', run: () => s.setView({ kind: 'playlist', id }) } : undefined,
+            );
+          }}
+          onClose={() => setNewPlKey(null)}
+        />
+      )}
     </section>
   );
 }
 
 // 行内菜单主体（相对行定位；透明遮罩兜底点击关闭）
 function RowMenu(props: {
-  mode: 'main' | 'pick' | 'new';
+  mode: 'main' | 'pick';
   plView: boolean;
   recentView: boolean;
-  newName: string;
-  dupName: boolean;
+  libView: boolean;
   onMain: () => void;
   onPick: (t: 'all' | 'favs' | string) => void;
   onNew: () => void;
-  onNewName: (v: string) => void;
-  onNewConfirm: () => void;
-  onNewCancel: () => void;
   onNext: () => void;
   onEnqueue: () => void;
   onRemoveFromPl: () => void;
   onRemoveFromRecent: () => void;
+  onRemoveFromLib: () => void;
   onOpen: () => void;
   onClose: () => void;
 }) {
@@ -381,39 +412,6 @@ function RowMenu(props: {
         <div className="menu-mask" onClick={props.onClose} />
         <div className="row-menu">
           <PlaylistPicker onPick={props.onPick} onNew={props.onNew} />
-        </div>
-      </>
-    );
-  }
-  if (props.mode === 'new') {
-    return (
-      <>
-        <div className="menu-mask" onClick={props.onClose} />
-        <div className="row-menu new-pl">
-          <div className="menu-label">新建歌单</div>
-          <input
-            autoFocus
-            placeholder="歌单名称"
-            value={props.newName}
-            onChange={(e) => props.onNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.nativeEvent.isComposing) return;
-              if (e.key === 'Enter') props.onNewConfirm();
-              if (e.key === 'Escape') {
-                e.stopPropagation(); // 只退回主菜单，不触发窗口级 Esc 把整个菜单关掉
-                props.onNewCancel();
-              }
-            }}
-          />
-          {props.dupName && <div className="menu-dup">已有同名歌单，确认将使用它</div>}
-          <div className="menu-btns">
-            <button className="btn ghost sm" onClick={props.onNewCancel}>
-              取消
-            </button>
-            <button className="btn accent sm" disabled={!props.newName.trim()} onClick={props.onNewConfirm}>
-              创建并添加
-            </button>
-          </div>
         </div>
       </>
     );
@@ -433,6 +431,11 @@ function RowMenu(props: {
         {props.recentView && (
           <button className="danger" onClick={props.onRemoveFromRecent}>
             从最近播放移除
+          </button>
+        )}
+        {props.libView && (
+          <button className="danger" onClick={props.onRemoveFromLib}>
+            从音乐库删除
           </button>
         )}
         <button onClick={props.onOpen}>打开 B 站原页面</button>

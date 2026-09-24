@@ -30,7 +30,7 @@ export default function NowPlaying({ track, loading, playing }: Props) {
           <LogoTile size={68} />
         </div>
         <h2>把 B 站的音乐搬到这里来听</h2>
-        <p>粘贴视频链接或 BV 号，选择分 P 或整张合集加入队列。默认只播音频，随时可以切回视频。</p>
+        <p>粘贴视频链接或 BV 号，选择分 P 或整张合集加入队列，默认只播音频。</p>
         <code>https://www.bilibili.com/video/BV...</code>
       </div>
     );

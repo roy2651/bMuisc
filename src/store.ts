@@ -34,6 +34,11 @@ export interface Playlist {
   id: string;
   name: string;
   keys: TrackKey[];
+  biliMlid?: string; // 绑定的B站收藏夹 mlid（当前目标，可随推送换绑/导入更新）：推送以此为默认目标，据此增量更新
+  biliSrc?: 'import' | 'push'; // 歌单的「建立来源」，首次绑定时记录、写后不变（复审第三轮 P2：
+  // 必须与可变的 mlid 分开——导入建立的歌单即使之后推送换绑，仍保留 import 来源、
+  // 仍可按「清除从B站导入的歌单」清理；仅推送建立的本地自建歌单=push，不随导入清理误删。
+  // 旧快照无此字段，按首次绑定时观察到的动作记录）
 }
 
 // 导航视图：正在播放页 / 我的喜欢 / 全部音乐 / 最近播放 / 某个自建歌单。
@@ -173,7 +178,20 @@ export interface PlayerState {
   undoClear(): void;
   createPlaylist(name: string): string;
   renamePlaylist(id: string, name: string): void;
+  /** 删除歌单；级联清库：只被此歌单引用的曲目一并移出曲库（喜欢的/其他歌单里的保留） */
   deletePlaylist(id: string): void;
+  /** 从曲库移除曲目（连带清理喜欢/最近播放/歌单里的引用，指向被删 key 的撤销备份作废；队列持有副本不受影响） */
+  removeFromLib(keys: TrackKey[]): void;
+  /** 一键清除本地歌单：'all' 全部自建歌单 / 'synced' 仅从B站导入生成的（biliMlid 绑定且
+   *  biliSrc!=='push'，仅推送过的本地自建歌单不清，见复审 F2）。
+   *  只动本地数据，绝不调用B站删除接口——收藏夹由用户自己在B站管理 */
+  clearPlaylists(scope: 'all' | 'synced'): void;
+  /** 清空全部音乐数据：曲目库、歌单、喜欢、最近播放全部清空。
+   *  歌单必须一起清：歌单引用的曲库键会悬空，重新同步时会"复活"旧曲目。
+   *  当前队列持有曲目副本不受影响；B站收藏夹不受影响 */
+  clearLibrary(): void;
+  /** 绑定B站收藏夹 mlid（当前目标，可变）；src 只在歌单尚未有来源时记录为建立来源（写后不变） */
+  bindPlaylistBili(id: string, mlid: string, src: 'import' | 'push'): void;
   /** 加入歌单：按 bvid:cid 去重（不同版本可共存），返回实际新增数 */
   addToPlaylist(id: string, items: LibTrack[]): number;
   removeFromPlaylist(id: string, key: TrackKey): void;
@@ -201,20 +219,25 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
   const muted = data.muted === true;
   const mode = MODES.includes(data.mode as LoopMode) ? (data.mode as LoopMode) : 'order';
   setVolume(muted ? 0 : volume);
-  // v1 快照没有库/歌单：把旧队列曲目整体收录进库，歌单从空开始
+  // 旧版快照（无 lib 字段，v1）没有曲库概念：把队列曲目整体收录进库，歌单从空开始。
+  // 带 lib 字段的现代快照（v2+）严格恢复，库与队列相互独立——清空曲库后队列仍可
+  // 恢复播放，但重启时队列曲目不得「复活」进曲库（审查 R4：清空→重启 libOrder 复原）
+  const legacy = !(data.lib && typeof data.lib === 'object');
   const lib: Record<TrackKey, LibTrack> = {};
-  for (const t of tracks as Track[]) {
-    const k = keyOf(t);
-    lib[k] = { bvid: t.bvid, cid: t.cid, title: t.title, up: t.up, cover: t.cover, duration: t.duration, pageLabel: t.pageLabel, source: t.source };
-  }
-  if (data.lib && typeof data.lib === 'object') {
+  if (legacy) {
+    for (const t of tracks as Track[]) {
+      const k = keyOf(t);
+      lib[k] = { bvid: t.bvid, cid: t.cid, title: t.title, up: t.up, cover: t.cover, duration: t.duration, pageLabel: t.pageLabel, source: t.source };
+    }
+  } else {
     for (const [k, t] of Object.entries(data.lib as Record<string, LibTrack>)) {
       if (!t || typeof t.bvid !== 'string' || typeof t.cid !== 'number') continue;
       lib[k] = t;
     }
   }
   // 曲库顺序：v3 有保存顺序，按其校验恢复（缺失的 key 补到尾部），
-  // 不能让播放队列改写库顺序；v1 没有曲目库，退回「队列优先」迁移
+  // 不能让播放队列改写库顺序；旧版快照（v1 无库）退回「队列优先」迁移，
+  // v2（有库无顺序）由下方兜底循环按 lib 保存顺序补齐
   const seen = new Set<TrackKey>();
   const libOrder: TrackKey[] = [];
   const savedOrder: TrackKey[] = Array.isArray(data.libOrder)
@@ -227,7 +250,7 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
         seen.add(k);
       }
     }
-  } else {
+  } else if (legacy) {
     for (const t of tracks as Track[]) {
       const k = keyOf(t);
       if (lib[k] && !seen.has(k)) {
@@ -749,11 +772,94 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     deletePlaylist(id) {
       const { playlists, view, lastSaveTo, parseTargetHint } = get();
+      const pl = playlists.find((p) => p.id === id);
       set({ playlists: playlists.filter((p) => p.id !== id) });
       // 浏览位置、保存目标若指向被删歌单一并回落
       if (view.kind === 'playlist' && view.id === id) set({ view: { kind: 'all' } });
       if (lastSaveTo === id) set({ lastSaveTo: 'all' });
       if (parseTargetHint === id) set({ parseTargetHint: null });
+      // 级联清库：删除后仍被「我的喜欢」或其余歌单引用的曲目留在曲库，其余移除
+      if (pl) {
+        const keepRefs = new Set(get().favs);
+        for (const p of get().playlists) for (const k of p.keys) keepRefs.add(k);
+        const orphan = pl.keys.filter((k) => !keepRefs.has(k));
+        if (orphan.length > 0) {
+          get().removeFromLib(orphan); // 内部已落盘
+          return;
+        }
+      }
+      saveSnapshot(get(), true);
+    },
+
+    removeFromLib(keys) {
+      const drop = new Set(keys);
+      const { lib, libOrder, favs, recent, playlists, plRemoveBackup } = get();
+      // 歌单引用同步清理：库里条目没了，歌单 keys 若保留会变成「计数 N、实际 0」
+      // 的悬空引用，重新保存同曲还会自动恢复旧成员关系（审查 R3 实测复现）
+      const nextPls = playlists.map((p) => {
+        const next = p.keys.filter((k) => !drop.has(k));
+        return next.length === p.keys.length ? p : { ...p, keys: next };
+      });
+      // 指向被删 key 的撤销备份一并作废：撤销会把悬空 key 插回歌单
+      const backup = plRemoveBackup && drop.has(plRemoveBackup.key) ? null : plRemoveBackup;
+      set({
+        lib: Object.fromEntries(Object.entries(lib).filter(([k]) => !drop.has(k))),
+        libOrder: libOrder.filter((k) => !drop.has(k)),
+        favs: favs.filter((k) => !drop.has(k)),
+        recent: recent.filter((k) => !drop.has(k)),
+        playlists: nextPls,
+        plRemoveBackup: backup,
+      });
+      saveSnapshot(get(), true);
+    },
+
+    bindPlaylistBili(id, mlid, src) {
+      // biliSrc = 建立来源，写后不变：导入建立的歌单之后无论推送/换绑到哪个收藏夹，
+      // 来源仍是 import、仍按导入清理；推送不会把导入歌单「变成推送歌单」（复审第三轮 P2）
+      set({
+        playlists: get().playlists.map((p) => (p.id === id ? { ...p, biliMlid: mlid, biliSrc: p.biliSrc ?? src } : p)),
+      });
+      saveSnapshot(get(), true);
+    },
+
+    clearPlaylists(scope) {
+      const { playlists, view, lastSaveTo, parseTargetHint, favs } = get();
+      // 'synced' 只清「建立来源为导入」的歌单（biliSrc !== 'push'）：来源写后不变，
+      // 导入建立的歌单即使之后推送换绑仍算导入来源；仅推送建立的本地自建歌单不清（复审 F2）
+      const removedPls = playlists.filter((p) => (scope === 'synced' ? !!p.biliMlid && p.biliSrc !== 'push' : true));
+      if (removedPls.length === 0) return;
+      const keep = playlists.filter((p) => !removedPls.includes(p));
+      const removed = new Set(removedPls.map((p) => p.id));
+      set({ playlists: keep });
+      // 浏览位置、保存目标若指向被清歌单一并回落（与 deletePlaylist 同规）
+      if (view.kind === 'playlist' && removed.has(view.id)) set({ view: { kind: 'all' } });
+      if (lastSaveTo && removed.has(lastSaveTo)) set({ lastSaveTo: 'all' });
+      if (parseTargetHint && removed.has(parseTargetHint)) set({ parseTargetHint: null });
+      // 级联清库：删除后仍被「我的喜欢」或保留歌单引用的曲目留在曲库，其余移除
+      const keepRefs = new Set(favs);
+      for (const p of keep) for (const k of p.keys) keepRefs.add(k);
+      const orphan = removedPls.flatMap((p) => p.keys).filter((k) => !keepRefs.has(k));
+      if (orphan.length > 0) {
+        get().removeFromLib(orphan); // 内部已落盘
+        return;
+      }
+      saveSnapshot(get(), true);
+    },
+
+    clearLibrary() {
+      const { view } = get();
+      set({
+        lib: {},
+        libOrder: [],
+        favs: [],
+        recent: [],
+        playlists: [],
+        // 撤销备份引用的 key 已不在库：保留会撤销出悬空引用（同 removeFromLib 的 R3 语义）
+        plRemoveBackup: null,
+        view: view.kind === 'playlist' ? { kind: 'all' } : view,
+        lastSaveTo: 'all',
+        parseTargetHint: null,
+      });
       saveSnapshot(get(), true);
     },
 

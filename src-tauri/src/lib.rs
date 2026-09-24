@@ -1,6 +1,8 @@
 pub mod bilibili; // pub 供集成测试（tests/）直接验证解析链路
 mod commands;
+mod fav;
 mod proxy;
+mod session;
 #[cfg(windows)]
 mod tray;
 
@@ -68,7 +70,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::resolve_view,
             commands::resolve_streams,
-            commands::proxy_port
+            commands::proxy_port,
+            commands::login_qr_generate,
+            commands::login_qr_poll,
+            commands::login_state,
+            commands::login_logout,
+            commands::fav_folders,
+            commands::fav_resources,
+            commands::fav_push,
+            commands::fav_create_folder
         ])
         .build(tauri::generate_context!())
         .expect("bMuisc 启动失败")

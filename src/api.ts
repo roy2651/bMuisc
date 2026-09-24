@@ -25,6 +25,7 @@ export interface SeasonInfo {
 
 export interface ViewInfo {
   bvid: string;
+  aid: number; // 稿件 id（收藏写回用，Rust 侧消费）
   title: string;
   owner: string;
   cover: string;
