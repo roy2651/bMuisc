@@ -1,0 +1,27 @@
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_fd7e4d11671a09 3
+package.json
+  s_34cee9fc3fc328::t_9927db043eae2a 4
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_48a05625fe97e8 4
+package-lock.json
+  s_34cee9fc3fc328::t_45dc85b2123604 3,9
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_7c2d58cae06cbe 375
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7e5c4a6a84df012b9b5afe2242c46b7e118057b5",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash-260828"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
