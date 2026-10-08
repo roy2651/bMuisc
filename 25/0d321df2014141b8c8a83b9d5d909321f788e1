@@ -1,0 +1,31 @@
+docs/mini-player.md
+  s_13c8e8ed9df516::t_5eb1851f8ba5c9 1-99
+README.md
+  s_13c8e8ed9df516::t_01b35dc89af836 86-87,122-123
+docs/mini-window-eval.md
+  s_13c8e8ed9df516::t_5eb1851f8ba5c9 1-2
+  s_13c8e8ed9df516::t_2f336a34089fc7 3
+docs/project-plan.md
+  s_13c8e8ed9df516::t_01b35dc89af836 58,80,223,225,239
+AGENTS.md
+  s_13c8e8ed9df516::t_01b35dc89af836 31,47-51
+  s_13c8e8ed9df516::t_a6df96712e9cde 52
+docs/project-status.md
+  s_13c8e8ed9df516::t_01b35dc89af836 7-12,70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "250d321df2014141b8c8a83b9d5d909321f788e1",
+  "prompts": {},
+  "sessions": {
+    "s_13c8e8ed9df516": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c192-272f-7c02-b235-3b693670d209",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
