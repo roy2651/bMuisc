@@ -41,17 +41,23 @@ export const useSession = create<SessionStore>((set) => ({
 export interface QrStart {
   url: string;
   qrcodeKey: string;
+  epoch: number; // 登录代际号：轮询须回传，原生侧落库前校验（防作废登录迟到写回）
 }
 
-export type QrPollStatus = 'waiting' | 'scanned' | 'expired' | 'success';
+export type QrPollStatus = 'waiting' | 'scanned' | 'expired' | 'success' | 'cancelled';
 
 export interface QrPoll {
   status: QrPollStatus;
   user?: SessionUser;
 }
 
-export const loginQrGenerate = () => invoke<QrStart>('login_qr_generate');
-export const loginQrPoll = (qrcodeKey: string) => invoke<QrPoll>('login_qr_poll', { qrcodeKey });
+// attemptId 由前端生成、每次打开弹窗一个：定向取消旧弹窗的登录尝试，
+// 迟到的取消不会误杀新弹窗已开始的登录（无差别换代会）
+export const loginQrGenerate = (attemptId: string) =>
+  invoke<QrStart>('login_qr_generate', { attemptId });
+export const loginQrPoll = (qrcodeKey: string, epoch: number) =>
+  invoke<QrPoll>('login_qr_poll', { qrcodeKey, epoch });
+export const loginQrCancel = (attemptId: string) => invoke('login_qr_cancel', { attemptId });
 
 // ---- 收藏夹 ----
 
@@ -74,6 +80,7 @@ export interface FavListResult {
   items: FavItem[];
   skippedOther: number;
   skippedInvalid: number;
+  truncated: boolean; // 50 页封顶仍未读完：部分结果，UI 需提示
 }
 
 export const favFolders = () => invoke<FavFolder[]>('fav_folders');

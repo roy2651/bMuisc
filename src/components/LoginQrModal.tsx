@@ -1,12 +1,15 @@
 // 扫码登录弹窗：渲染B站登录二维码 + 轮询扫码状态。
 // 状态机：loading → waiting → scanned → success（86038 过期自动换新码重来）。
 // 网络失败自动重试；凭证在 Rust 侧入库（OS 安全存储），前端只收登录结果。
+// 登录尝试带前端生成的 attemptId：轮询随代际号（epoch）上报，关窗/登出/换码后
+// 原生侧丢弃迟到结果不落库；取消按 attemptId 定向——旧弹窗迟到的取消
+// 不会作废新弹窗的登录。
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { registerEsc } from '../escStack';
 import { useModalFocus } from '../useModalFocus';
 import { usePlayer } from '../store';
-import { loginQrGenerate, loginQrPoll, useSession, type SessionUser } from '../session';
+import { loginQrCancel, loginQrGenerate, loginQrPoll, useSession, type SessionUser } from '../session';
 import { IconX } from './icons';
 
 type Phase = 'loading' | 'waiting' | 'scanned' | 'success' | 'error';
@@ -36,7 +39,10 @@ export default function LoginQrModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     let cancelled = false;
+    let succeeded = false; // 登录已成功：卸载时不再作废（凭证已落库，作废无意义）
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // 本次弹窗的登录尝试 ID：取消按它定向，只作废本弹窗的在途登录
+    const attemptId = crypto.randomUUID();
     const sleep = (ms: number) => new Promise<void>((r) => (timer = setTimeout(r, ms)));
     (async () => {
       // 外层循环：过期/网络失败后重新取码；内层循环：1.5s 轮询扫码状态
@@ -44,7 +50,7 @@ export default function LoginQrModal({ onClose }: { onClose: () => void }) {
         try {
           setPhase('loading');
           setQrData(null);
-          const { url, qrcodeKey } = await loginQrGenerate();
+          const { url, qrcodeKey, epoch } = await loginQrGenerate(attemptId);
           if (cancelled) return;
           setQrData(
             await QRCode.toDataURL(url, { width: 216, margin: 1, color: { dark: '#12151c', light: '#ffffff' } }),
@@ -54,9 +60,11 @@ export default function LoginQrModal({ onClose }: { onClose: () => void }) {
           while (!cancelled && !expired) {
             await sleep(1500);
             if (cancelled) return;
-            const r = await loginQrPoll(qrcodeKey);
+            const r = await loginQrPoll(qrcodeKey, epoch);
             if (cancelled) return;
+            if (r.status === 'cancelled') return; // 本次登录已被作废（登出/换新码）：静默停止
             if (r.status === 'success' && r.user) {
+              succeeded = true;
               setUser(r.user);
               setPhase('success');
               void refresh();
@@ -79,6 +87,10 @@ export default function LoginQrModal({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      // 关窗/Esc/遮罩/卸载统一走到卸载：按 attemptId 定向作废原生侧在途登录
+      // （复审 P2-①）——只置前端 cancelled 不够，在途轮询迟到成功仍会落库；
+      // 定向保证这个迟到的取消不会误杀新弹窗已开始的登录
+      if (!succeeded) void loginQrCancel(attemptId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

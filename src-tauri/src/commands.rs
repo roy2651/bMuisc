@@ -25,13 +25,20 @@ pub async fn proxy_port() -> Result<u16, String> {
 // ---------- 账号 / 收藏夹（凭证只在 Rust 侧，前端只见展示信息） ----------
 
 #[tauri::command]
-pub async fn login_qr_generate() -> Result<session::QrStart, String> {
-    session::qr_generate().await
+pub async fn login_qr_generate(attempt_id: String) -> Result<session::QrStart, String> {
+    session::qr_generate(&attempt_id).await
 }
 
 #[tauri::command]
-pub async fn login_qr_poll(qrcode_key: String) -> Result<session::PollDto, String> {
-    session::qr_poll(&qrcode_key).await
+pub async fn login_qr_poll(qrcode_key: String, epoch: u64) -> Result<session::PollDto, String> {
+    session::qr_poll(&qrcode_key, epoch).await
+}
+
+/// 关闭扫码弹窗等放弃登录的路径：按尝试 ID 定向作废在途登录——旧弹窗迟到的
+/// 取消不会影响新弹窗已开始的登录（无差别换代会误杀，复审 P2-①）
+#[tauri::command]
+pub async fn login_qr_cancel(attempt_id: String) {
+    session::cancel_attempt(&attempt_id);
 }
 
 #[tauri::command]

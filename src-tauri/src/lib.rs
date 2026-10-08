@@ -73,6 +73,7 @@ pub fn run() {
             commands::proxy_port,
             commands::login_qr_generate,
             commands::login_qr_poll,
+            commands::login_qr_cancel,
             commands::login_state,
             commands::login_logout,
             commands::fav_folders,

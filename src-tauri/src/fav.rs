@@ -59,6 +59,7 @@ pub struct FavListResult {
     pub items: Vec<FavItem>,
     pub skipped_other: u32, // 音频区等暂不支持的内容
     pub skipped_invalid: u32, // 已失效视频
+    pub truncated: bool, // 50 页封顶仍未读完（约 1000 条）：部分结果，前端需明确提示
 }
 
 pub async fn resources(media_id: &str) -> Result<FavListResult, String> {
@@ -66,6 +67,7 @@ pub async fn resources(media_id: &str) -> Result<FavListResult, String> {
     let mut items = Vec::new();
     let mut skipped_other = 0u32;
     let mut skipped_invalid = 0u32;
+    let mut truncated = false;
     // ps 上限 20（接口规定）；50 页为防御性封顶，正常个人收藏夹远小于此
     for pn in 1..=50u32 {
         let url = format!(
@@ -98,12 +100,19 @@ pub async fn resources(media_id: &str) -> Result<FavListResult, String> {
         if !has_more || medias.is_empty() {
             break;
         }
+        if pn == 50 {
+            truncated = true; // 服务端仍有内容但已到页数上限：按部分结果返回并标记
+        }
     }
-    log::info!("[fav] 收藏夹内容 mlid={media_id} 条目={} 跳过音频/其他={skipped_other} 失效={skipped_invalid}", items.len());
+    log::info!(
+        "[fav] 收藏夹内容 mlid={media_id} 条目={} 跳过音频/其他={skipped_other} 失效={skipped_invalid} 截断={truncated}",
+        items.len()
+    );
     Ok(FavListResult {
         items,
         skipped_other,
         skipped_invalid,
+        truncated,
     })
 }
 

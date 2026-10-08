@@ -19,6 +19,7 @@ interface ImportResult {
   failed: { title: string; reason: string }[];
   skippedOther: number;
   skippedInvalid: number;
+  truncated: boolean;
   plId: string;
   plName: string;
 }
@@ -32,6 +33,7 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [delPlOpen, setDelPlOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('list');
+  const [truncWarn, setTruncWarn] = useState(false); // 收藏夹超读取上限（50 页封顶）：导入中即提示
   const [progress, setProgress] = useState({ done: 0, total: 0, current: '' });
   const [result, setResult] = useState<ImportResult | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
@@ -81,8 +83,14 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
       setProgress({ done: 0, total: 0, current: '正在拉取收藏夹内容…' });
       const res = await favResources(folder.id);
       if (task.cancelled) return;
+      setTruncWarn(res.truncated);
       if (res.items.length === 0) {
-        setActionErr('这个收藏夹里没有可导入的视频（可能全是失效或音频条目）');
+        // 前 1000 条全被过滤时 items 为空但 truncated 为真：明确说明只检查了前 1000 条
+        setActionErr(
+          res.truncated
+            ? '前 1000 条内容里没有可导入的视频（可能全是失效或音频条目）；收藏夹超出读取上限，后面的内容未检查'
+            : '这个收藏夹里没有可导入的视频（可能全是失效或音频条目）',
+        );
         setPhase('list');
         return;
       }
@@ -138,6 +146,7 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
         failed,
         skippedOther: res.skippedOther,
         skippedInvalid: res.skippedInvalid,
+        truncated: res.truncated,
         plId,
         plName,
       });
@@ -233,6 +242,9 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
 
         {phase === 'importing' && (
           <>
+            {truncWarn && (
+              <div className="fav-result bad">收藏夹内容超过 1000 条，本次仅读取并导入前 1000 条中的可导入部分</div>
+            )}
             <div className="fav-progress">
               <div className="fav-progress-line">
                 <span className="cur" title={progress.current}>
@@ -264,6 +276,7 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
               {result.total > result.added && <p>{result.total - result.added} 首与歌单现有曲目重复，已跳过</p>}
               {result.skippedInvalid > 0 && <p className="bad">{result.skippedInvalid} 条已失效，无法导入</p>}
               {result.skippedOther > 0 && <p className="bad">{result.skippedOther} 条音频等内容暂不支持，已跳过</p>}
+              {result.truncated && <p className="bad">收藏夹内容超过 1000 条，超出部分未读取、未导入</p>}
               {result.failed.length > 0 && (
                 <p className="bad">
                   {result.failed.length} 条解析失败（{result.failed[0].title}
