@@ -83,6 +83,8 @@ macOS 自动更新将在公证完成后开放；目前请从 Releases 下载新�
 
 当前版本为 **v0.4.0**，以音频播放为主。应用内音视频切换、Linux 适配及 macOS 公证仍在后续计划中；不提供离线下载、媒体转存或会员内容解锁。
 
+下一项体验功能是 **[迷你播放器](docs/mini-player.md)**（已确认需求，尚未实现）：通过桌面浮窗快速上一首、播放 / 暂停、下一首和加入 / 取消喜欢。
+
 收藏夹导入与推送均为用户主动操作、增量追加，不是自动镜像同步。完整交互约定和后续阶段见[项目规划](docs/project-plan.md)，实施及验收记录见[项目进度](docs/project-status.md)。
 
 ## 本地开发
@@ -117,7 +119,8 @@ npm run app:build # 构建桌面安装包
 - [账号登录与收藏夹导入 / 推送](docs/login-fav-research.md)
 - [自动更新机制](docs/auto-update.md)
 - [平台扩展可行性](docs/platform-feasibility.md)
-- [迷你浮窗评估](docs/mini-window-eval.md)
+- [迷你播放器需求与验收](docs/mini-player.md)
+- [迷你浮窗历史评估](docs/mini-window-eval.md)
 
 ## 说明
 
