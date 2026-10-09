@@ -1,0 +1,34 @@
+docs/reviews/2026-10-09-v050-closeout.md
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 1-8,10-45
+  s_13c8e8ed9df516::t_026da85c009b15 9,46-54
+AGENTS.md
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 12,16,31-32,46,48,50-52,105-106
+docs/project-plan.md
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 5,7,11,21,35,54,58,63,67,71,80,96-98,209,215,225,227,233,241-242
+docs/mini-player.md
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 3,5,38,40,42-46,48-49,53,77,87-107,109-111,113-115
+  s_13c8e8ed9df516::t_991babe177e646 47,55,108,112
+README.md
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 8,29,80,86,88,113,120
+src-tauri/src/mini.rs
+  s_13c8e8ed9df516::t_256fc257380102 49,59-64
+docs/project-status.md
+  s_13c8e8ed9df516::t_991babe177e646 58
+  s_13c8e8ed9df516::t_ed75dbfb7f8dfa 11-12,48,71-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "41d1b80a85c63a843b8c30d9a25d71c39170aaf3",
+  "prompts": {},
+  "sessions": {
+    "s_13c8e8ed9df516": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c192-272f-7c02-b235-3b693670d209",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
