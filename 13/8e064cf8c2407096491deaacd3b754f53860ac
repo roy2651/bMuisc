@@ -1,0 +1,91 @@
+src/index.css
+  s_34cee9fc3fc328::t_2773f41f179257 1322-1342,1344-1370,1375-1393
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 1394-1395
+  s_34cee9fc3fc328::t_998a6b47ca425e 1343
+  s_34cee9fc3fc328::t_311abe763aaaae 1371-1374
+docs/mini-player.md
+  s_34cee9fc3fc328::t_e08dcb46e92805 3
+src/App.tsx
+  s_13c8e8ed9df516::t_671c50e8b592d7 10,29-32,57-59,103-104,186-195
+src/mini.tsx
+  s_34cee9fc3fc328::t_d003886961d246 1-15
+src-tauri/src/tray.rs
+  s_13c8e8ed9df516::t_671c50e8b592d7 7,12,14,24-29,47,49
+docs/project-status.md
+  s_34cee9fc3fc328::t_4a83136706c822 7,9-11
+  s_34cee9fc3fc328::t_7816f6a365531e 70
+  s_34cee9fc3fc328::t_80ab5c903cbcc0 47
+mini.html
+  s_34cee9fc3fc328::t_4f6b8d4e1913e5 1-15
+src/MiniPlayer.tsx
+  s_13c8e8ed9df516::t_3f79073fc1c90f 29,33-34,38
+  s_13c8e8ed9df516::t_0e1e5451b6f3cb 1-28,30-32,35-37,39-264
+src/util.ts
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 28-41,43-53
+scripts/verify-mini.cjs
+  s_13c8e8ed9df516::t_59831067a7cb82 261
+  s_13c8e8ed9df516::t_55c89ffe772e77 24-29,39-43,45,47-48,60-63,68,77-78,144-192
+  s_13c8e8ed9df516::t_3f79073fc1c90f 1-23,30-38,44,46,49-59,64-67,69-76,79-143,193-260
+vite.config.ts
+  s_34cee9fc3fc328::t_b27a8fd98ef8e2 1,5-6,11-19
+src/components/AccountMenu.tsx
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 55
+scripts/verify-images.cjs
+  s_13c8e8ed9df516::t_db0aa9f7605a59 43,65
+  s_13c8e8ed9df516::t_55c89ffe772e77 1-42,44-64
+src/miniBus.ts
+  s_13c8e8ed9df516::t_3f79073fc1c90f 36
+  s_13c8e8ed9df516::t_671c50e8b592d7 1-35,37-50
+src/miniGeometry.ts
+  s_13c8e8ed9df516::t_acf27d107c74a4 10-11
+  s_13c8e8ed9df516::t_0e1e5451b6f3cb 1-9,12-23
+src-tauri/src/mini.rs
+  s_13c8e8ed9df516::t_56fff6b4e80ebf 130-136
+  s_13c8e8ed9df516::t_4dc44007301ca1 1-3,5-8,14-15,21-26,28-68,70,73-74,79-80,89-129,137-209
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 4,9-13,16-20,27,69,71-72,75-78,81-88
+src/components/ThumbImg.tsx
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 1-4,12-13,16-30,32-37
+src-tauri/capabilities/mini.json
+  s_34cee9fc3fc328::t_8e1077f42e0d61 1-19
+src/components/icons.tsx
+  s_34cee9fc3fc328::t_bb08b74b61e78c 228-253
+src/miniHost.ts
+  s_13c8e8ed9df516::t_3f79073fc1c90f 2
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 87-88,90-93,95,99,101,103-130,132,134,138,141-143,146-150,152,154-156,171-174
+  s_13c8e8ed9df516::t_671c50e8b592d7 1,3-86,89,94,96-98,100,102,131,133,135-137,139-140,144-145,151,153,157-170,175-186
+src/components/SettingsModal.tsx
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 104
+src-tauri/src/lib.rs
+  s_34cee9fc3fc328::t_e4fbf3ba4b908a 22,25-28,30-31
+  s_34cee9fc3fc328::t_1a35a918034bd6 100
+  s_34cee9fc3fc328::t_e2c773bb8a500a 65,67-77
+  s_13c8e8ed9df516::t_671c50e8b592d7 17,29,66,101,111
+  s_34cee9fc3fc328::t_d140365879bae4 7
+  s_34cee9fc3fc328::t_33d89a9d485855 102-103
+  s_34cee9fc3fc328::t_a804bcd1cd6e84 97,99
+  s_13c8e8ed9df516::t_e0a7cd0123bb4a 1-3,98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "138e064cf8c2407096491deaacd3b754f53860ac",
+  "prompts": {},
+  "sessions": {
+    "s_13c8e8ed9df516": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c192-272f-7c02-b235-3b693670d209",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    },
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
