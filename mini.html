@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- hdslb 图床防盗链会拒绝 WebView 页面源作 Referer（403），图片须无 Referer 请求 -->
+    <meta name="referrer" content="no-referrer" />
+    <title>bMuisc 迷你播放器</title>
+  </head>
+  <!-- class="mini"：index.css 里 body.mini 覆盖为透明底（transparent 窗口圆角外露出桌面） -->
+  <body class="mini">
+    <div id="root"></div>
+    <script type="module" src="/src/mini.tsx"></script>
+  </body>
+</html>

@@ -1319,3 +1319,77 @@ img { -webkit-user-drag: none; }
 .np-input:focus { border-color: rgba(251, 114, 153, 0.55); }
 .np-dup { margin-top: 8px; font-size: 12px; color: #ffcf9a; }
 .cloud-mark { color: #ffc2d5; display: grid; flex: none; opacity: 0.85; }
+
+/* ---------- 迷你播放器浮窗（mini.html 独立入口；主窗播放栏入口按钮沿用 .btn 词汇） ---------- */
+
+/* 透明窗口：body 不铺底色，卡片圆角外的区域透出桌面 */
+body.mini { background: transparent; overflow: hidden; user-select: none; }
+body.mini #root { height: 100vh; }
+
+.mini-card {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: rgba(18, 21, 28, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+}
+
+.mini-cover { width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: cover; flex: none; background: #1a1e28; }
+.mini-cover-empty { display: grid; place-items: center; color: var(--text3); }
+
+.mini-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mini-title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-sub { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-sub.bad { color: #ff9a9a; }
+
+.mini-controls { display: flex; align-items: center; gap: 2px; flex: none; }
+.mini-card .icon-btn { width: 28px; height: 28px; }
+.mini-card .play-btn { width: 36px; height: 36px; box-shadow: 0 4px 12px rgba(251, 114, 153, 0.35); }
+
+/* 次级窗口操作（右上角悬浮）：置顶 / 展开 / 隐藏 */
+.mini-ops { position: absolute; top: 5px; right: 6px; display: flex; gap: 2px; }
+.mini-op {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text3);
+  cursor: pointer;
+  border-radius: 5px;
+}
+.mini-op:hover { color: var(--text); background: var(--panel-hover); }
+.mini-op.on { color: var(--accent); }
+
+/* 空态：与有歌卡片同构（封面占位 + 两行文案 + 右侧展开入口），错语文案标红 */
+.mini-empty { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.mini-empty-btn { flex: none; }
+.mini-title.bad { color: #ff9a9a; }
+
+/* 指令失败等瞬时提示（Phase B cmd-result 用；效果稿 mock 也复用） */
+.mini-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  max-width: 90%;
+  font-size: 11px;
+  color: var(--text2);
+  background: rgba(11, 13, 18, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.thumb-placeholder { display: grid; place-items: center; color: var(--text3); }

@@ -4,13 +4,14 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter,
 };
 
 pub fn init(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
+    let mini = MenuItem::with_id(app, "mini", "迷你播放器", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &mini, &quit])?;
 
     TrayIconBuilder::with_id("main")
         .icon(app.default_window_icon().expect("bundle 内置图标缺失").clone())
@@ -20,6 +21,12 @@ pub fn init(app: &tauri::App) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main(app),
+            // 进迷你模式：只向主窗转发请求——建窗/握手/藏主窗的完整流程
+            // 在主窗 webview 的 enterMini 里（回调里建窗会死锁，wry#583）。
+            // 广播而非 emit_to：mini 不监听此事件，主窗的 Any 监听器必然收到
+            "mini" => {
+                let _ = app.emit("mini:enter", ());
+            }
             "quit" => app.exit(0), // 唯一真退出：关窗只是藏
             _ => {}
         })
@@ -37,12 +44,7 @@ pub fn init(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-// 显示并聚焦主窗（托盘左键 / 菜单项共用；第二实例启动的同款逻辑在
-// single-instance 回调里，那边 mac 也要用，不跨平台共享这个模块）
+// 所有恢复入口走同一原生模式切换，取消迟到的进入请求。
 fn show_main(app: &tauri::AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
-        let _ = w.show();
-        let _ = w.unminimize();
-        let _ = w.set_focus();
-    }
+    crate::mini::show_main(app);
 }

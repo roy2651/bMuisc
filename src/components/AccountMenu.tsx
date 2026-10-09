@@ -52,7 +52,7 @@ export default function AccountMenu() {
         onClick={() => setMenu((v) => !v)}
       >
         {user?.face ? (
-          <ThumbImg className="top-avatar" cover={user.face} size="sm" />
+          <ThumbImg className="top-avatar" cover={user.face} size="sm" fallback={<IconUser size={13} />} />
         ) : (
           <span className="top-avatar empty">
             <IconUser size={13} />

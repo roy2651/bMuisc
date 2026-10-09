@@ -1,6 +1,10 @@
+#[cfg(windows)]
+use tauri::Manager;
+
 pub mod bilibili; // pub 供集成测试（tests/）直接验证解析链路
 mod commands;
 mod fav;
+mod mini;
 mod proxy;
 mod session;
 #[cfg(windows)]
@@ -10,23 +14,21 @@ mod tray;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            // 第二实例启动时立即退出，转由这里把已有窗口带到前台（macOS 关窗后是隐藏，需要先 show）
-            use tauri::Manager;
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-                let _ = w.unminimize();
-                let _ = w.set_focus();
-            }
+            mini::show_main(app);
         }))
         .plugin(tauri_plugin_opener::init())
         .on_window_event(|window, event| {
             // Windows 关窗 = 藏到托盘继续运行（播放不中断），唯一退出在托盘菜单；
+            // 迷你浮窗同理：关闭 = 仅隐藏浮窗，播放继续（docs/mini-player.md §4.5）。
             // macOS 不拦：tao 默认关窗即隐藏，Dock 图标恢复（RunEvent::Reopen）
             #[cfg(windows)]
-            if window.label() == "main" {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    let _ = window.hide();
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                match window.label() {
+                    "main" | "mini" => {
+                        api.prevent_close();
+                        mini::hide_window(window.app_handle(), window.label());
+                    }
+                    _ => {}
                 }
             }
             #[cfg(not(windows))]
@@ -60,6 +62,19 @@ pub fn run() {
             // Windows 托盘（关窗=隐藏，退出走托盘菜单，见 tray.rs）
             #[cfg(windows)]
             tray::init(app)?;
+            // 预建迷你浮窗（隐藏待激活，Windows v1）：懒创建的冷启动要 1~2s，
+            // 是「进入迷你模式慢」的主因；预建后入口即点即开，内存增量需实机验证。
+            // 独立线程 + 延迟执行：避开 setup 同步段建窗（wry#583），也不拖慢启动
+            #[cfg(windows)]
+            {
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(1200));
+                    if let Err(e) = mini::preload(&handle) {
+                        eprintln!("迷你浮窗预建失败: {e}");
+                    }
+                });
+            }
             tauri::async_runtime::spawn(async {
                 if let Err(e) = proxy::spawn().await {
                     eprintln!("本地媒体代理启动失败: {e}");
@@ -79,7 +94,13 @@ pub fn run() {
             commands::fav_folders,
             commands::fav_resources,
             commands::fav_push,
-            commands::fav_create_folder
+            commands::fav_create_folder,
+            mini::mini_begin_enter,
+            mini::mini_show,
+            mini::mini_commit_enter,
+            mini::mini_cancel_enter,
+            mini::mini_expand,
+            mini::mini_close
         ])
         .build(tauri::generate_context!())
         .expect("bMuisc 启动失败")
@@ -87,11 +108,7 @@ pub fn run() {
             // macOS 点 Dock 图标：把隐藏的窗口重新显示（关窗只是 hide，应用仍在运行）
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Reopen { .. } = event {
-                use tauri::Manager;
-                if let Some(w) = app.get_webview_window("main") {
-                    let _ = w.show();
-                    let _ = w.set_focus();
-                }
+                mini::show_main(app);
             }
             #[cfg(not(target_os = "macos"))]
             let _ = (&app, &event);

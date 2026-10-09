@@ -25,12 +25,30 @@ const THUMB_SUFFIX: Record<ThumbSize, string> = {
   lg: '@540w_540h_1c.webp', // 正在播放大卡片 240px：2x DPI 需 480，留 540 扛 225% 缩放
   wide: '@960w_540h_1c.webp', // 正在播放模糊背景（全窗 16:9，重度模糊下分辨率无关紧要）
 };
+/** 只升级已知图床，覆盖头像、原图回退、GIF 与协议相对地址。 */
+export function imageUrl(source: string | null | undefined): string {
+  if (!source) return '';
+  try {
+    const url = new URL(source.startsWith('//') ? `https:${source}` : source);
+    if ((url.hostname === 'hdslb.com' || url.hostname.endsWith('.hdslb.com')) &&
+        (url.protocol === 'http:' || url.protocol === 'https:')) {
+      url.protocol = 'https:';
+      return url.href;
+    }
+  } catch { /* 非 URL 图源维持原值，由组件失败回退。 */ }
+  return source;
+}
+
 export function thumbUrl(cover: string | null | undefined, size: ThumbSize): string {
-  if (!cover) return '';
-  // 锚定 host，防止 hdslb.com 出现在 query/路径中段时误加工非 B 站 URL
-  if (!/^https?:\/\/[^/?#]*hdslb\.com\/bfs\//.test(cover)) return cover;
-  if (size === 'lg' && /\.gif(?:$|\?)/i.test(cover)) return cover; // 大卡片保留动图封面的动画（列表行仍冻结省内存）
-  const at = cover.indexOf('@');
-  const base = at < 0 ? cover : cover.slice(0, at);
-  return base + THUMB_SUFFIX[size];
+  const original = imageUrl(cover);
+  if (!original) return '';
+  try {
+    const url = new URL(original);
+    if (!url.hostname.endsWith('.hdslb.com') && url.hostname !== 'hdslb.com') return original;
+    if (!url.pathname.startsWith('/bfs/')) return original;
+    if (size === 'lg' && /\.gif$/i.test(url.pathname)) return original;
+    // 只处理路径后缀，保留 query/hash，避免把缩略参数加在查询值中。
+    url.pathname = url.pathname.split('@')[0] + THUMB_SUFFIX[size];
+    return url.href;
+  } catch { return original; }
 }

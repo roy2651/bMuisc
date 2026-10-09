@@ -101,7 +101,7 @@ export default function SettingsModal({ version, onClose, onFoundUpdate }: Props
             <div>
               <div className="acct-user">
                 {sessionState?.user?.face ? (
-                  <ThumbImg className="acct-avatar" cover={sessionState.user.face} size="sm" />
+                  <ThumbImg className="acct-avatar" cover={sessionState.user.face} size="sm" fallback={<IconUser size={16} />} />
                 ) : (
                   <span className="acct-avatar empty">
                     <IconUser size={16} />

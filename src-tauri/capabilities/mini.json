@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "mini",
+  "description": "迷你播放器浮窗：事件总线 + 最小窗口操作（拖动/置顶/位置恢复/显隐）。刻意不含 opener/updater/log 等主窗能力",
+  "windows": ["mini"],
+  "permissions": [
+    "core:event:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-close",
+    "core:window:allow-hide",
+    "core:window:allow-show",
+    "core:window:allow-set-position",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-current-monitor",
+    "core:window:allow-available-monitors",
+    "core:window:allow-outer-position",
+    "core:window:allow-outer-size"
+  ]
+}

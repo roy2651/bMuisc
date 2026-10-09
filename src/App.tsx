@@ -7,6 +7,7 @@ import type { Update } from '@tauri-apps/plugin-updater';
 import type { ViewInfo } from './api';
 import { initEngine, setVolume as syncEngineVolume } from './engine';
 import { initMediaSession, syncMediaSession } from './mediaSession';
+import { initMiniHost, enterMini, restoreMain } from './miniHost';
 import { useSession } from './session';
 import { usePlayer } from './store';
 import { autoUpdateEnabled, checkForUpdate } from './updater';
@@ -25,7 +26,10 @@ import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import TrackView from './components/TrackView';
 import UpdateModal from './components/UpdateModal';
-import { IconSettings, IconX, LogoMark } from './components/icons';
+import { IconMini, IconSettings, IconX, LogoMark } from './components/icons';
+
+// 迷你播放器 v1 仅 Windows 实现与验收（需求 §2）；平台判定先例见 updater.ts
+const isWindows = /Windows/i.test(navigator.userAgent);
 
 export default function App() {
   const { tracks, currentId, playing, loading, error, dismissError, restore, confirmAdd, flushSnapshot, view, queueOpen, playlists, lastSaveTo, parseTargetHint, setParseTargetHint } = usePlayer();
@@ -50,6 +54,9 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     restore();
+    // 迷你播放器宿主：状态推送/指令执行/进入握手（一次性，StrictMode 安全）。
+    // 浮窗不会自动出现——只在用户点入口/托盘时显示（需求 §4.7 重启不自动弹浮窗）
+    void initMiniHost().catch(() => {});
     (async () => {
       for (let i = 0; i < 5 && !cancelled; i++) {
         try {
@@ -93,6 +100,8 @@ export default function App() {
         // 因下载进行中被跳过释放
         .then((u) => {
           if (cancelled || !u) return;
+          // 主窗可能正藏在迷你模式/托盘后面：更新弹窗必须可见，先把主窗带回来
+          void restoreMain().catch((e) => usePlayer.getState().notify(`恢复主窗口失败：${e}`));
           setUpdate((prev) => prev ?? u);
         })
         .catch(() => {});
@@ -174,6 +183,16 @@ export default function App() {
         />
         {version && <span className="version-chip">v{version}</span>}
         <AccountMenu />
+        {isWindows && (
+          <button
+            className="icon-btn"
+            onClick={() => void enterMini()}
+            title="迷你模式：切换到桌面浮窗控制（主窗口将暂时收起）"
+            aria-label="迷你模式"
+          >
+            <IconMini />
+          </button>
+        )}
         <button className="icon-btn" onClick={openSettings} title="设置" aria-label="设置">
           <IconSettings />
         </button>

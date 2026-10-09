@@ -225,6 +225,32 @@ export const IconSettings = ({ size }: IconProps) => (
   </svg>
 );
 
+// 迷你播放器入口：画中画（PiP）风格小浮窗
+export const IconMini = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+    <rect x="12" y="11" width="7.5" height="5.5" rx="1.2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+// 浮窗置顶开关（on 态走 .mini-op.on 的 accent 着色）
+export const IconPin = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M9 3.5h6l-.8 6 3 3v1.5H6.8v-1.5l3-3-.8-6z" />
+    <path d="M12 14v6.5" />
+  </svg>
+);
+
+// 展开回主窗：四角向外
+export const IconExpand = ({ size }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M9 4H6a2 2 0 0 0-2 2v3" />
+    <path d="M15 4h3a2 2 0 0 1 2 2v3" />
+    <path d="M9 20H6a2 2 0 0 1-2-2v-3" />
+    <path d="M15 20h3a2 2 0 0 0 2-2v-3" />
+  </svg>
+);
+
 // 品牌 logo：bm 手写单色标（描边白，跟随 currentColor），来自 design bm-mark-white.svg
 export const LogoMark = ({ size = 30 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 512 512" fill="none" aria-hidden="true">

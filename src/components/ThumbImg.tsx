@@ -1,8 +1,7 @@
-// 带原图回退的缩略封面：展示层走 @后缀 缩略图（见 util.thumbUrl 的实测依据），
-// 个别图源对后缀变体 404 / 未来风控变化时，一次性回退到快照里的原图 URL。
-// 回退状态按封面 URL 记（failedFor），换曲目自然失效，无需手动重置。
-import { useState } from 'react';
-import { thumbUrl, type ThumbSize } from '../util';
+// HTTPS 缩略图 → HTTPS 原图 → 占位图；失败按图源/尺寸隔离。
+import { useState, type ReactNode } from 'react';
+import { imageUrl, thumbUrl, type ThumbSize } from '../util';
+import { IconMusic } from './icons';
 
 interface Props {
   cover: string | null | undefined;
@@ -10,22 +9,32 @@ interface Props {
   className: string;
   alt?: string;
   loading?: 'lazy' | 'eager';
+  dragRegion?: boolean;
+  fallback?: ReactNode;
 }
 
-export default function ThumbImg({ cover, size = 'md', className, alt = '', loading }: Props) {
-  const [failedFor, setFailedFor] = useState<string | null>(null);
-  const original = cover ?? '';
-  const failed = failedFor === original;
-  const src = failed ? original : thumbUrl(cover, size);
+export default function ThumbImg({ cover, size = 'md', className, alt = '', loading, dragRegion, fallback }: Props) {
+  const original = imageUrl(cover);
+  const thumbnail = thumbUrl(cover, size);
+  const source = `${original}\n${size}`;
+  const [failure, setFailure] = useState<{ source: string; urls: string[] } | null>(null);
+  const failed = failure?.source === source ? failure.urls : [];
+  const src = !failed.includes(thumbnail) ? thumbnail : original;
+  if (!src || failed.includes(src)) {
+    return (
+      <span className={`${className} empty thumb-placeholder`} role="img" aria-label={alt || '图片不可用'}
+        data-tauri-drag-region={dragRegion ? '' : undefined}>
+        {fallback ?? <IconMusic size={16} />}
+      </span>
+    );
+  }
   return (
-    <img
-      className={className}
-      src={src}
-      alt={alt}
-      loading={loading}
-      onError={() => {
-        if (src !== original) setFailedFor(original);
-      }}
+    <img key={src} className={className} src={src} alt={alt} loading={loading}
+      referrerPolicy="no-referrer" data-tauri-drag-region={dragRegion ? '' : undefined}
+      onError={() => setFailure((previous) => ({
+        source,
+        urls: [...(previous?.source === source ? previous.urls : []), src],
+      }))}
     />
   );
 }
