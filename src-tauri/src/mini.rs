@@ -46,19 +46,22 @@ fn ensure_mini(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
     if let Some(w) = app.get_webview_window(MINI_LABEL) {
         return Ok(w);
     }
-    WebviewWindowBuilder::new(app, MINI_LABEL, WebviewUrl::App("mini.html".into()))
+    let builder = WebviewWindowBuilder::new(app, MINI_LABEL, WebviewUrl::App("mini.html".into()))
         .title("bMuisc 迷你播放器")
         .inner_size(340.0, 90.0)
         .decorations(false)
-        .transparent(true)
         .shadow(false)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
         // 保留现有鼠标不抢焦点行为；键盘访问仍需后续平台验证。
         .focusable(false)
-        .visible(false)
-        .build()
+        .visible(false);
+    // 迷你入口当前仅 Windows 开放；macOS 的 transparent API 需要 macos-private-api。
+    // 共用模块仍会在 macOS 编译，因此将透明配置限制在已支持的平台。
+    #[cfg(windows)]
+    let builder = builder.transparent(true);
+    builder.build()
 }
 
 /// 启动预建只创建隐藏窗口，不改变窗口模式。
