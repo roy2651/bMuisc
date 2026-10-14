@@ -1,0 +1,43 @@
+docs/mini-player.md
+  s_34cee9fc3fc328::t_4c3d2c6fc8e008 114
+  s_34cee9fc3fc328::t_e2eb646dc6c0d8 110
+  s_34cee9fc3fc328::t_7d9884613dfca4 107-109,111,113
+  s_34cee9fc3fc328::t_6dd079290b9177 112
+src/App.tsx
+  s_34cee9fc3fc328::t_6970d8bd8010a2 204,208-209
+  s_34cee9fc3fc328::t_b3a197680b22bb 205-207
+src/index.css
+  s_34cee9fc3fc328::t_3f4394bcc43b96 529-531
+src/components/PlayerBar.tsx
+  s_34cee9fc3fc328::t_eaaf743c4773c2 87
+  s_34cee9fc3fc328::t_980da1cce8fc3c 18
+docs/project-plan.md
+  s_34cee9fc3fc328::t_646ddd381d8c19 221-222
+  s_34cee9fc3fc328::t_69f4a01ecd2b50 212
+src/MiniPlayer.tsx
+  s_34cee9fc3fc328::t_d9f46b55b2e823 250
+docs/project-status.md
+  s_34cee9fc3fc328::t_545d5d7ac18470 38
+  s_34cee9fc3fc328::t_9cb1a9588c1e3c 75
+  s_34cee9fc3fc328::t_4902366ae230c3 11
+src-tauri/src/bilibili.rs
+  s_34cee9fc3fc328::t_ff959df0b71fe2 32
+  s_34cee9fc3fc328::t_fac970468d8271 94-96,98,108-109,112,115,118-120,125-128
+  s_34cee9fc3fc328::t_d915178c5dd3d5 129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "92e4d9f2c30d000fd74aaf087d9eb0f2d3084d40",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5.3"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
