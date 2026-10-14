@@ -185,7 +185,7 @@ export default function SettingsModal({ version, onClose, onFoundUpdate }: Props
               <p className="set-desc">
                 {sessionState?.loggedIn
                   ? importedCount > 0
-                    ? `删除 ${importedCount} 个从B站收藏夹导入生成的本地歌单，仅属于它们音乐会一并移出曲库；本地自建、仅推送过的歌单不受影响；B站收藏夹不受影响`
+                    ? `删除 ${importedCount} 个从B站收藏夹导入生成的本地歌单，仅属于它们的音乐会一并移出曲库和播放队列；本地自建、仅推送过的歌单不受影响；B站收藏夹不受影响`
                     : '还没有从B站导入生成的歌单'
                   : '登录后可按导入来源清除'}
               </p>
@@ -202,7 +202,7 @@ export default function SettingsModal({ version, onClose, onFoundUpdate }: Props
             <div>
               <p className="set-label">清除全部本地歌单</p>
               <p className="set-desc">
-                删除所有自建歌单（{playlistCount} 个），仅属于它们的音乐会一并移出曲库，喜欢的音乐保留；B站收藏夹不受影响
+                删除所有自建歌单（{playlistCount} 个），仅属于它们的音乐会一并移出曲库和播放队列，喜欢的音乐保留；B站收藏夹不受影响
               </p>
             </div>
             <button className="btn ghost sm" disabled={playlistCount === 0} onClick={() => setClearScope('all')}>
@@ -213,7 +213,7 @@ export default function SettingsModal({ version, onClose, onFoundUpdate }: Props
             <div>
               <p className="set-label">清空全部音乐</p>
               <p className="set-desc">
-                清空曲目库（{trackCount} 首）并删除全部歌单、喜欢与最近播放记录；B站收藏夹与当前播放不受影响
+                清空曲目库（{trackCount} 首）、全部歌单、喜欢、最近播放与播放队列，并停止播放；B站收藏夹不受影响
               </p>
             </div>
             <button className="btn ghost sm" disabled={trackCount === 0} onClick={() => setClearScope('lib')}>
@@ -227,10 +227,10 @@ export default function SettingsModal({ version, onClose, onFoundUpdate }: Props
             title={clearScope === 'all' ? '清除全部本地歌单' : clearScope === 'synced' ? '清除从B站导入的歌单' : '清空全部音乐'}
             body={
               clearScope === 'all'
-                ? `将删除全部 ${playlistCount} 个本地歌单；其中未被「我的喜欢」引用的音乐会一并从曲库移除。B站收藏夹不受影响。`
+                ? `将删除全部 ${playlistCount} 个本地歌单；其中未被「我的喜欢」引用的音乐会一并从曲库和播放队列移除。若包含当前歌曲，将切换到剩余歌曲，队列为空则停止播放。B站收藏夹不受影响。`
                 : clearScope === 'synced'
-                  ? `将删除 ${importedCount} 个从B站收藏夹导入生成的本地歌单；其中未被「我的喜欢」或保留歌单引用的音乐会一并从曲库移除。本地自建、仅推送过的歌单不受影响；B站收藏夹不受影响。`
-                  : `将清空曲目库（${trackCount} 首）并删除全部歌单、「我的喜欢」与最近播放记录，恢复到空白状态。B站收藏夹与当前播放不受影响。`
+                  ? `将删除 ${importedCount} 个从B站收藏夹导入生成的本地歌单；其中未被「我的喜欢」或保留歌单引用的音乐会一并从曲库和播放队列移除。若包含当前歌曲，将切换到剩余歌曲，队列为空则停止播放。本地自建、仅推送过的歌单不受影响；B站收藏夹不受影响。`
+                  : `将清空曲目库（${trackCount} 首）、全部歌单、「我的喜欢」、最近播放与播放队列，并停止播放。此操作不可撤销；B站收藏夹不受影响。`
             }
             confirmText={clearScope === 'lib' ? '清空' : '清除'}
             danger

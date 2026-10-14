@@ -157,7 +157,7 @@ export default function Sidebar() {
       {delPl && (
         <ConfirmModal
           title="删除歌单"
-          body={`歌单「${delPl.name}」将被删除。仅属于此歌单、且未被「我的喜欢」或其他歌单引用的音乐会一并从曲库移除；B站收藏夹不受影响。`}
+          body={`歌单「${delPl.name}」将被删除。仅属于此歌单、且未被「我的喜欢」或其他歌单引用的音乐会一并从曲库和播放队列移除；若包含当前歌曲，将切换到剩余歌曲，队列为空则停止播放。B站收藏夹不受影响。`}
           confirmText="删除"
           danger
           onConfirm={() => {

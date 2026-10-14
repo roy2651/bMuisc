@@ -9,12 +9,12 @@
 // 保存（进歌单/喜欢/库）与播放严格分离：单纯保存不改队列、不打断播放。
 
 import { create } from 'zustand';
-import { hooks, bindReporter, hasSource, loadTrack, needsReload, prefetchTrack, getPrefetched, togglePlay, play as enginePlay, pause as enginePause, seek, setVolume, stopAndRelease } from './engine';
+import { hooks, bindReporter, hasSource, hasPlayIntent, loadTrack, needsReload, prefetchTrack, getPrefetched, togglePlay, play as enginePlay, pause as enginePause, seek, setVolume, stopAndRelease } from './engine';
 
 export type LoopMode = 'order' | 'loop' | 'one' | 'random';
 
 export interface Track {
-  uid: string; // 队列条目 ID，与视频标识分离，重复添加仍可独立排序删除
+  uid: string; // 队列条目 ID；按 bvid:cid 去重，移动条目时保留 ID
   bvid: string;
   cid: number;
   title: string; // 歌名优先：分 P 用 part 标题，合集用单集标题
@@ -153,12 +153,12 @@ export interface PlayerState {
   focusAddTick: number; // 请求聚焦顶部添加输入框（歌单页「添加音乐」按钮）
   toast: Toast | null;
 
-  /** 添加内容：收录进库；saveTo 决定额外保存到哪；playNow = 保存后把本批追加到队列并从本批第一首播放（不替换队列）。返回实际新增/跳过数。 */
+  /** 添加内容：收录进库；saveTo 决定额外保存到哪；playNow = 去重追加并播放本批第一首（已在队列则复用，不替换队列）。返回实际新增/跳过数。 */
   addTracks(items: LibTrack[], playNow: boolean, saveTo?: 'all' | 'favs' | TrackKey | null): AddStats;
   /** 解析弹窗统一入口：解析 {new} 目标 → 创建歌单 → 保存 → 反馈提示，一次完成。 */
   confirmAdd(items: LibTrack[], playNow: boolean, target: AddTarget): void;
-  enqueue(item: LibTrack): void; // 追加到队列末尾，不改变播放
-  playNext(items: LibTrack[]): void; // 下一首播放：插入当前曲目之后，不打断播放
+  enqueue(item: LibTrack): void; // 未入队的追加到末尾，已入队则提示，不改变播放
+  playNext(items: LibTrack[]): void; // 下一首播放：已有条目移到当前项后，新条目插入；当前项不移动
   playAt(uid: string): void;
   playFrom(source: 'favs' | 'all' | string, key: TrackKey): void; // 用该列表整单替换队列并从 key 播放
   toggle(): void;
@@ -180,7 +180,7 @@ export interface PlayerState {
   renamePlaylist(id: string, name: string): void;
   /** 删除歌单；级联清库：只被此歌单引用的曲目一并移出曲库（喜欢的/其他歌单里的保留） */
   deletePlaylist(id: string): void;
-  /** 从曲库移除曲目（连带清理喜欢/最近播放/歌单里的引用，指向被删 key 的撤销备份作废；队列持有副本不受影响） */
+  /** 从曲库移除曲目，连带清理喜欢/最近播放/歌单/队列；含被删曲目的撤销备份作废 */
   removeFromLib(keys: TrackKey[]): void;
   /** 一键清除本地歌单：'all' 全部自建歌单 / 'synced' 仅从B站导入生成的（biliMlid 绑定且
    *  biliSrc!=='push'，仅推送过的本地自建歌单不清，见复审 F2）。
@@ -188,7 +188,7 @@ export interface PlayerState {
   clearPlaylists(scope: 'all' | 'synced'): void;
   /** 清空全部音乐数据：曲目库、歌单、喜欢、最近播放全部清空。
    *  歌单必须一起清：歌单引用的曲库键会悬空，重新同步时会"复活"旧曲目。
-   *  当前队列持有曲目副本不受影响；B站收藏夹不受影响 */
+   *  同时清空队列并停止播放；B站收藏夹不受影响 */
   clearLibrary(): void;
   /** 绑定B站收藏夹 mlid（当前目标，可变）；src 只在歌单尚未有来源时记录为建立来源（写后不变） */
   bindPlaylistBili(id: string, mlid: string, src: 'import' | 'push'): void;
@@ -220,8 +220,8 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
   const mode = MODES.includes(data.mode as LoopMode) ? (data.mode as LoopMode) : 'order';
   setVolume(muted ? 0 : volume);
   // 旧版快照（无 lib 字段，v1）没有曲库概念：把队列曲目整体收录进库，歌单从空开始。
-  // 带 lib 字段的现代快照（v2+）严格恢复，库与队列相互独立——清空曲库后队列仍可
-  // 恢复播放，但重启时队列曲目不得「复活」进曲库（审查 R4：清空→重启 libOrder 复原）
+  // 带 lib 字段的现代快照（v2+）以库为准：旧队列不得让已删除的曲目复活进库，
+  // 下方会同步移除这些历史遗留的队列条目。
   const legacy = !(data.lib && typeof data.lib === 'object');
   const lib: Record<TrackKey, LibTrack> = {};
   if (legacy) {
@@ -265,10 +265,24 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
       seen.add(k);
     }
   }
+  // 队列归一化（2026-10-14 语义变更）：追加路径已去重、删除路径已级联清队列，旧
+  // 快照里的重复副本与已从音乐库删除的孤儿条目在此一次清理——同一内容保留最早
+  // 一条。新规则下入队路径都会 upsertLib；历史版本允许库外队列，迁移时一并清理。
+  const normTracks: Track[] = [];
+  const keptByKey = new Map<TrackKey, Track>();
+  for (const t of tracks) {
+    const k = keyOf(t);
+    if (keptByKey.has(k) || !lib[k]) continue;
+    keptByKey.set(k, t);
+    normTracks.push(t);
+  }
+  const survived = new Set(normTracks);
+  const cleanKeys = (keys: unknown[]): TrackKey[] => [...new Set(keys.filter((k): k is TrackKey => typeof k === 'string' && !!lib[k]))];
   const playlists = Array.isArray(data.playlists)
     ? data.playlists.filter((p): p is Playlist => !!p && typeof p.id === 'string' && Array.isArray(p.keys))
+      .map((p) => ({ ...p, keys: cleanKeys(p.keys) }))
     : [];
-  const favs = Array.isArray(data.favs) ? data.favs.filter((k): k is TrackKey => typeof k === 'string' && !!lib[k]) : [];
+  const favs = Array.isArray(data.favs) ? cleanKeys(data.favs) : [];
   // 最近播放：只收仍在库中的合法 key，去重保序封顶；旧快照没有该字段 → 空列表
   const recent: TrackKey[] = [];
   if (Array.isArray(data.recent)) {
@@ -294,14 +308,24 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
       : typeof rawSave === 'string' && playlists.some((p) => p.id === rawSave)
         ? rawSave
         : 'all';
-  if (tracks.length === 0 && libOrder.length === 0) {
-    set({ volume, muted, mode, lib, libOrder, playlists, favs, recent, view, lastSaveTo });
-    return;
+  let currentId: string | null = null;
+  let resumePos = 0;
+  const rawIdx = tracks.findIndex((t) => t.uid === data.currentId);
+  if (rawIdx >= 0) {
+    const survivor = keptByKey.get(keyOf(tracks[rawIdx]));
+    if (survivor) {
+      currentId = survivor.uid;
+      resumePos = data.position ?? 0; // 指向被合并的重复副本：同一内容，进度仍有效
+    } else if (normTracks.length > 0) {
+      // 指向孤儿条目：按删除级联规则落到原位置后第一个幸存项（无则最后一个），进度归零
+      let survivorsBefore = 0;
+      for (let i = 0; i < rawIdx; i++) if (survived.has(tracks[i])) survivorsBefore++;
+      const nextIdx = survivorsBefore < normTracks.length ? survivorsBefore : normTracks.length - 1;
+      currentId = normTracks[nextIdx].uid;
+    }
   }
-  const currentId = tracks.some((t) => t.uid === data.currentId) ? data.currentId! : null;
-  const resumePos = currentId ? data.position ?? 0 : 0;
   set({
-    tracks,
+    tracks: normTracks,
     volume,
     muted,
     mode,
@@ -401,7 +425,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
           : source === 'recent'
             ? recent
             : (playlists.find((p) => p.id === source)?.keys ?? []);
-    return keys.map((k) => lib[k]).filter(Boolean);
+    return [...new Set(keys)].map((k) => lib[k]).filter(Boolean);
   }
 
   // 最近播放记录：引擎上报真正出声（playing 事件：playing=true 且 loading=false）时调用。
@@ -417,6 +441,58 @@ export const usePlayer = create<PlayerState>((set, get) => {
     if (recentRecordedFor === k) return;
     recentRecordedFor = k;
     set({ recent: [k, ...recent.filter((x) => x !== k)].slice(0, RECENT_MAX) });
+  }
+
+  // 批量追加去重（2026-10-14 语义变更）：队列不再保留重复内容。批内与队列内按
+  // bvid:cid 去重后追加到末尾，返回「本批第一首」的播放落点——已在队列则指向既有
+  // 条目（「立即播放」表达的是现在就想听这首），否则指向新追加的位置；无可落点
+  // 返回 -1。只改 tracks，不落盘不启播，由调用方收尾。
+  function appendQueue(items: LibTrack[], tracks: Track[]): number {
+    if (items.length === 0) return -1;
+    const inQueue = new Set(tracks.map(keyOf));
+    const fresh: Track[] = [];
+    for (const t of items) {
+      const k = keyOf(t);
+      if (inQueue.has(k)) continue;
+      inQueue.add(k); // 同一批内的重复也在此过滤
+      fresh.push({ ...t, uid: newUid() });
+    }
+    if (fresh.length > 0) set({ tracks: [...tracks, ...fresh], clearedBackup: null }); // 队列变了，清空撤销已无意义
+    const firstKey = keyOf(items[0]);
+    const existing = tracks.findIndex((t) => keyOf(t) === firstKey);
+    if (existing >= 0) return existing;
+    const inFresh = fresh.findIndex((t) => keyOf(t) === firstKey);
+    return inFresh >= 0 ? tracks.length + inFresh : -1;
+  }
+
+  // 队列按内容批量移除（2026-10-14 语义变更）：音乐库删除级联清理队列副本。当前
+  // 播放项被移除时沿用队列「删除当前项」规则：切到原位置后第一个幸存项（没有则
+  // 最后一个）；播放或加载中按最新意图续播，暂停则只记录新当前项（savedSeek=0）；
+  // 队列清空则停播。只改播放态相关字段，不落盘，由调用方收尾。
+  function dropQueueByKeys(drop: Set<TrackKey>) {
+    const { tracks, currentId, playing, loading, clearedBackup } = get();
+    // 队列已经清空时也必须使受影响的撤销失效，避免把从音乐库删除的歌曲带回来。
+    if (clearedBackup?.tracks.some((t) => drop.has(keyOf(t)))) set({ clearedBackup: null });
+    const remaining = tracks.filter((t) => !drop.has(keyOf(t)));
+    if (remaining.length === tracks.length) return;
+    const curIdx = tracks.findIndex((t) => t.uid === currentId);
+    if (curIdx < 0 || !drop.has(keyOf(tracks[curIdx]))) {
+      set({ tracks: remaining });
+      return;
+    }
+    const resume = hasPlayIntent() && (playing || loading);
+    stopAndRelease();
+    if (remaining.length === 0) {
+      set({ tracks: remaining, currentId: null, position: 0, duration: 0, savedSeek: null, error: null });
+      return;
+    }
+    // 后继 = 原位置后第一个幸存项：被删项之前幸存了多少条，它就是 remaining 里的下标
+    let survivorsBefore = 0;
+    for (let i = 0; i < curIdx; i++) if (!drop.has(keyOf(tracks[i]))) survivorsBefore++;
+    const nextIdx = survivorsBefore < remaining.length ? survivorsBefore : remaining.length - 1;
+    set({ tracks: remaining, currentId: remaining[nextIdx].uid, position: 0, duration: 0, error: null });
+    if (resume) startTrack(nextIdx);
+    else set({ savedSeek: 0 }); // 保持暂停：新当前项从头播，加载留到用户点播放
   }
 
   return {
@@ -448,6 +524,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     addTracks(items, playNow, saveTo = null) {
       if (items.length === 0) return { saved: 0, skipped: 0 };
+      items = [...new Map(items.map((t) => [keyOf(t), t])).values()];
       const inLibBefore = new Set(get().libOrder); // 基线：判断哪些是这次真正新入库的
       upsertLib(items); // 添加过的内容自动进「全部」
       let saved = 0;
@@ -467,11 +544,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
         skipped = items.length - saved;
       }
       if (playNow) {
-        // 追加到队列末尾并从本批第一首播放；不替换、不打断既有队列结构之外的内容
-        const fresh = items.map((t) => ({ ...t, uid: newUid() }));
-        const { tracks } = get();
-        set({ tracks: [...tracks, ...fresh], clearedBackup: null }); // 新内容进来后撤销已无意义
-        startTrack(tracks.length);
+        // 追加去重后从本批第一首播放：已在队列的直接跳到既有条目（2026-10-14），
+        // 不替换既有队列结构、不制造重复副本
+        const startIdx = appendQueue(items, get().tracks);
+        if (startIdx >= 0) startTrack(startIdx);
       }
       saveSnapshot(get(), true);
       return { saved, skipped };
@@ -516,6 +592,12 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     enqueue(item) {
       upsertLib([item]);
+      // 队列去重（2026-10-14）：同一内容已入队则不再追加
+      if (get().tracks.some((t) => keyOf(t) === keyOf(item))) {
+        saveSnapshot(get(), true); // upsert 可能刷新了元数据
+        get().notify('已在队列中，未重复添加');
+        return;
+      }
       set({ tracks: [...get().tracks, { ...item, uid: newUid() }], clearedBackup: null });
       saveSnapshot(get(), true);
     },
@@ -523,16 +605,32 @@ export const usePlayer = create<PlayerState>((set, get) => {
     playNext(items) {
       if (items.length === 0) return;
       upsertLib(items);
-      const fresh = items.map((t) => ({ ...t, uid: newUid() }));
       const { tracks, currentId } = get();
       if (!currentId) {
-        // 没有正在播的：追加并从插入的第一首开始（无播放可打断）
-        set({ tracks: [...tracks, ...fresh], clearedBackup: null });
-        startTrack(tracks.length);
-      } else {
-        const idx = tracks.findIndex((t) => t.uid === currentId);
-        const next = [...tracks.slice(0, idx + 1), ...fresh, ...tracks.slice(idx + 1)];
+        // 没有正在播的：等同追加并从插入的第一首开始（无播放可打断）
+        const startIdx = appendQueue(items, tracks);
+        if (startIdx >= 0) startTrack(startIdx);
+        saveSnapshot(get(), true);
+        return;
+      }
+      // 「下一首」必须改变顺序：已有项移动并保留 uid，新项才创建；当前项不重播。
+      const byKey = new Map(tracks.map((t) => [keyOf(t), t]));
+      const current = tracks.find((t) => t.uid === currentId);
+      const selected = new Set<TrackKey>(current ? [keyOf(current)] : []);
+      const nextUp: Track[] = [];
+      for (const t of items) {
+        const k = keyOf(t);
+        if (selected.has(k)) continue;
+        selected.add(k);
+        nextUp.push(byKey.get(k) ?? { ...t, uid: newUid() });
+      }
+      if (nextUp.length > 0) {
+        const rest = tracks.filter((t) => t.uid === currentId || !selected.has(keyOf(t)));
+        const idx = rest.findIndex((t) => t.uid === currentId);
+        const next = [...rest.slice(0, idx + 1), ...nextUp, ...rest.slice(idx + 1)];
         set({ tracks: next, clearedBackup: null });
+      } else {
+        get().notify('这首歌已是当前播放项');
       }
       saveSnapshot(get(), true);
     },
@@ -697,31 +795,9 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
 
     remove(uid) {
-      const { tracks, currentId, playing } = get();
-      const index = tracks.findIndex((t) => t.uid === uid);
-      if (index < 0) return;
-      const remaining = tracks.filter((t) => t.uid !== uid);
-      if (uid !== currentId) {
-        set({ tracks: remaining });
-        saveSnapshot(get(), true);
-        return;
-      }
-      // 删除当前播放项：选其后继；没有后继则选剩余第一项。此前暂停则保持暂停。
-      stopAndRelease();
-      if (remaining.length === 0) {
-        set({ tracks: remaining, currentId: null, position: 0, duration: 0 });
-        saveSnapshot(get(), true);
-        return;
-      }
-      const nextIndex = Math.min(index, remaining.length - 1);
-      const target = remaining[nextIndex];
-      set({ tracks: remaining, currentId: target.uid, position: 0, duration: 0 });
-      if (playing) {
-        startTrack(nextIndex);
-      } else {
-        // 保持暂停：仅记录新当前项，加载留到用户点播放（savedSeek=0 从头）
-        set({ savedSeek: 0 });
-      }
+      const track = get().tracks.find((t) => t.uid === uid);
+      if (!track) return;
+      dropQueueByKeys(new Set([keyOf(track)]));
       saveSnapshot(get(), true);
     },
 
@@ -741,7 +817,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       if (tracks.length === 0) return;
       stopAndRelease();
       const backup = { tracks, currentId };
-      set({ tracks: [], currentId: null, position: 0, duration: 0, clearedBackup: backup });
+      set({ tracks: [], currentId: null, position: 0, duration: 0, savedSeek: null, error: null, clearedBackup: backup });
       // 5 秒后撤销机会自动过期，备份释放（按对象身份匹配，撤销→再清空不会误清新备份）
       setTimeout(() => {
         if (get().clearedBackup === backup) set({ clearedBackup: null });
@@ -810,6 +886,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
         playlists: nextPls,
         plRemoveBackup: backup,
       });
+      // 队列副本级联（2026-10-14 语义变更）：内容已从所有收藏移除，队列不再保留
+      // 孤儿副本；歌单删除/清除的孤儿清理走本入口，规则自动一致。当前项被移除时
+      // 按「删除当前项」同款规则选后继并按需续播。
+      dropQueueByKeys(drop);
       saveSnapshot(get(), true);
     },
 
@@ -848,6 +928,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     clearLibrary() {
       const { view } = get();
+      stopAndRelease();
       set({
         lib: {},
         libOrder: [],
@@ -856,6 +937,15 @@ export const usePlayer = create<PlayerState>((set, get) => {
         playlists: [],
         // 撤销备份引用的 key 已不在库：保留会撤销出悬空引用（同 removeFromLib 的 R3 语义）
         plRemoveBackup: null,
+        // 队列一并清空并停播（2026-10-14 语义变更），不保留已删除歌曲的队列副本；
+        // 清空全部音乐无撤销，不残留过期的队列撤销备份
+        tracks: [],
+        currentId: null,
+        position: 0,
+        duration: 0,
+        savedSeek: null,
+        error: null,
+        clearedBackup: null,
         view: view.kind === 'playlist' ? { kind: 'all' } : view,
         lastSaveTo: 'all',
         parseTargetHint: null,
@@ -868,7 +958,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       const pl = get().playlists.find((p) => p.id === id);
       if (!pl) return 0;
       const known = new Set(pl.keys);
-      const fresh = items.map(keyOf).filter((k) => !known.has(k));
+      const fresh = [...new Set(items.map(keyOf))].filter((k) => !known.has(k));
       if (fresh.length === 0) return 0;
       set({
         playlists: get().playlists.map((p) => (p.id === id ? { ...p, keys: [...p.keys, ...fresh] } : p)),

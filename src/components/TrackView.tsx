@@ -348,7 +348,7 @@ export default function TrackView() {
       {delPlOpen && pl && (
         <ConfirmModal
           title="删除歌单"
-          body={`歌单「${pl.name}」将被删除。仅属于此歌单、且未被「我的喜欢」或其他歌单引用的音乐会一并从曲库移除；B站收藏夹不受影响。`}
+          body={`歌单「${pl.name}」将被删除。仅属于此歌单、且未被「我的喜欢」或其他歌单引用的音乐会一并从曲库和播放队列移除；若包含当前歌曲，将切换到剩余歌曲，队列为空则停止播放。B站收藏夹不受影响。`}
           confirmText="删除"
           danger
           onConfirm={() => s.deletePlaylist(pl.id)}
@@ -358,7 +358,7 @@ export default function TrackView() {
       {delKey !== null && lib[delKey] && (
         <ConfirmModal
           title="从音乐库删除"
-          body={`《${lib[delKey].title}》将从曲库移除，「我的喜欢」与最近播放里的记录一并清理；不影响当前播放队列。`}
+          body={`《${lib[delKey].title}》将从曲库、所有歌单、喜欢、最近播放及播放队列中移除。若正在播放这首歌，将切换到剩余歌曲，队列为空则停止播放。`}
           confirmText="删除"
           danger
           onConfirm={() => {

@@ -27,7 +27,7 @@ let loadedToken = -1; // 当前 audio.src 对应的编号
 let loadedBvid = '';
 let loadedCid = -1;
 let pendingSeek: number | null = null;
-let wantPlay = true; // 用户最新播放意图：解析完成时是否自动开播（解析期间暂停不被覆盖）
+let wantPlay = false; // 用户最新播放意图：解析完成时是否自动开播（解析期间暂停不被覆盖）
 let resolving = false; // 常规解析窗口标记：仅当前会话可置位/清除（新会话入口重置、旧会话完成被 token 门控拦下）
 const PREFETCH_TTL = 15 * 60 * 1000; // 预取有效期（地址实测约 25 分钟，取一半留裕量）
 
@@ -345,6 +345,11 @@ export function hasSource(): boolean {
   return !!(audio && audio.src); // 重启恢复后 audio 尚未加载，播放前需据此判断
 }
 
+// 删除当前项时也要保留解析 / 缓冲期间的最新意图，不能只看异步媒体事件的 playing。
+export function hasPlayIntent(): boolean {
+  return wantPlay;
+}
+
 // 主播放入口专用：src 还挂着，但当前加载会话已终败（解析失败）或媒体已报错——
 // 旧源不可直接恢复出声（会播错歌/对坏源再拒一次），调用方应重试当前曲目而非 togglePlay。
 // 解析在途（resolving）不算终败：那只需改写播放意图，等新源就绪自动开播。
@@ -374,6 +379,7 @@ export function setVolume(v: number) {
 export function stopAndRelease() {
   token++;
   preToken++;
+  wantPlay = false;
   elog(`stopAndRelease my=${token}`);
   resolving = false; // 会话终止：在途解析完成时将被 token 门控拦下，此处代为清理
   if (spare) {
