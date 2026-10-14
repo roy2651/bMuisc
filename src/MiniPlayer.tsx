@@ -247,7 +247,7 @@ export default function MiniPlayer() {
               className="play-btn"
               onClick={() => sendCmd('toggle')}
               disabled={!s.canToggle}
-              title={s.error ? '重试播放' : s.playing ? '暂停' : '播放'}
+              title={s.playing ? '暂停' : s.error ? '重试播放' : '播放'}
             >
               {s.loading ? <span className="spinner dark" /> : s.playing ? <IconPause size={18} /> : <IconPlay size={18} />}
             </button>

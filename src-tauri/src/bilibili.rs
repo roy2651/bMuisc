@@ -29,6 +29,7 @@ fn json_err(v: &serde_json::Value) -> String {
         Some(-101) => "登录已过期，请重新扫码".into(),
         Some(-111) => "登录校验失败，请重新扫码".into(),
         Some(-403) => "没有访问权限".into(),
+        Some(-404) => "内容不存在或已失效".into(),
         Some(11010) => "内容不存在或已失效".into(),
         Some(c) => format!("接口返回 {c}: {}", v["message"].as_str().unwrap_or("未知错误")),
         None => "响应格式异常".into(),
@@ -90,8 +91,11 @@ pub(crate) async fn api_form(
     }
 }
 
-/// 接口调用：匿名 + 概率性 -400 有限重试（见 docs/m0-findings.md §2.1）
+/// 接口调用：匿名 + 概率性 -400 有限重试（见 docs/m0-findings.md §2.1）。
+/// 内容类永久错误（-404/-403/11010）直接按人话返回——重试不会让删除的稿件复活，
+/// 白等 3×800ms 只会让用户以为卡死。
 async fn bili_json(url: &str) -> Result<serde_json::Value, String> {
+    let mut last_code = 0i64;
     let mut last = String::new();
     for i in 1..=4 {
         let resp = client()
@@ -101,17 +105,27 @@ async fn bili_json(url: &str) -> Result<serde_json::Value, String> {
             .await
             .map_err(|e| format!("网络请求失败: {e}"))?;
         let v: serde_json::Value = resp.json().await.map_err(|e| format!("响应解析失败: {e}"))?;
-        if v["code"].as_i64() == Some(0) {
+        let code = v["code"].as_i64();
+        if code == Some(0) {
             return Ok(v);
         }
+        last_code = code.unwrap_or(-1);
         last = format!(
             "{} {}",
-            v["code"].as_i64().unwrap_or(-1),
+            last_code,
             v["message"].as_str().unwrap_or("未知错误")
         );
+        if matches!(code, Some(-404) | Some(-403) | Some(11010)) {
+            return Err(json_err(&v));
+        }
         if i < 4 {
             tokio::time::sleep(Duration::from_millis(800)).await;
         }
+    }
+    // -400 双关（2026-10-14 实测 + m0 §2.2 诊断建议）：不存在的 bvid 与概率性风控
+    // 同为 -400，无法区分。耗尽重试后两种可能都要告知，用户才知道先检查链接
+    if last_code == -400 {
+        return Err("请求被拒绝（-400）：链接可能无效，也可能触发 B 站风控，请检查链接或稍后重试".into());
     }
     Err(format!("接口返回 {last}（已重试 4 次）"))
 }

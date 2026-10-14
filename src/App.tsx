@@ -201,7 +201,12 @@ export default function App() {
       {error && (
         <div className="banner" role="alert">
           <span>{error}</span>
-          <button onClick={dismissError} aria-label="关闭提示"><IconX size={14} /></button>
+          <span className="banner-ops">
+            {/* 重试=显式播放意图：错误态走 needsReload 重解析续播；缓冲期间重复
+                点击仍表达播放，不会把在途加载翻转成暂停（toggle 会翻转，勿改回） */}
+            {track && <button className="banner-retry" onClick={() => usePlayer.getState().play()}>重试</button>}
+            <button onClick={dismissError} aria-label="关闭提示"><IconX size={14} /></button>
+          </span>
         </div>
       )}
 

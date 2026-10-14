@@ -526,6 +526,9 @@ img { -webkit-user-drag: none; }
   flex: none;
 }
 .banner button { background: none; border: none; color: #ffb3b3; cursor: pointer; padding: 2px; display: grid; }
+.banner-ops { display: flex; align-items: center; gap: 10px; flex: none; }
+.banner-retry { font-size: 13px; color: #ffc2d5; } /* 与 .toast-action 同款动作色 */
+.banner-retry:hover { text-decoration: underline; }
 
 /* ---------- 正在播放 ---------- */
 

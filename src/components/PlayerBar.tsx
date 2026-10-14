@@ -15,7 +15,7 @@ function ModeIcon() {
 
 export default function PlayerBar() {
   const {
-    currentId, tracks, playing, loading, position, duration, volume, muted, mode, favs, view, queueOpen,
+    currentId, tracks, playing, loading, error, position, duration, volume, muted, mode, favs, view, queueOpen,
     toggleFav, toggle, next, prev, seekTo, setVolume, toggleMute, cycleMode, setView, setQueueOpen,
   } = usePlayer();
   const track = tracks.find((t) => t.uid === currentId) ?? null;
@@ -84,7 +84,7 @@ export default function PlayerBar() {
           <button className="icon-btn" onClick={prev} disabled={!track} title="上一首">
             <IconPrev />
           </button>
-          <button className="play-btn" onClick={toggle} disabled={!track && tracks.length === 0} title={playing ? '暂停' : '播放'}>
+          <button className="play-btn" onClick={toggle} disabled={!track && tracks.length === 0} title={playing ? '暂停' : error ? '重试播放' : '播放'}>
             {loading ? <span className="spinner dark" /> : playing ? <IconPause size={20} /> : <IconPlay size={20} />}
           </button>
           <button className="icon-btn" onClick={() => next(false)} disabled={!track} title="下一首">
