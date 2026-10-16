@@ -115,6 +115,7 @@ export default function FavImportModal({ onClose }: { onClose: () => void }) {
               duration: p.duration,
               pageLabel: multi ? `P${p.page}` : undefined,
               source: multi ? v.title : undefined,
+              page: multi ? p.page : undefined,
             });
           }
         } catch (e) {

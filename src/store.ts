@@ -23,6 +23,7 @@ export interface Track {
   duration: number;
   pageLabel?: string; // 短标注（P8 / 合集），完整来源放 source
   source?: string; // 所属视频 / 合集标题，次级信息用
+  page?: number; // 分 P 序号（「在B站看视频」定位用）；合集单集与单 P 省略
 }
 
 export type TrackKey = string; // `${bvid}:${cid}`，曲目库去重键
@@ -152,6 +153,7 @@ export interface PlayerState {
   parseTargetHint: 'all' | 'favs' | TrackKey | null; // 从歌单页「添加音乐」进入时的目标提示，用后即清
   focusAddTick: number; // 请求聚焦顶部添加输入框（歌单页「添加音乐」按钮）
   toast: Toast | null;
+  intentSeq: number; // 播放意图版本：用户播放控制操作递增，跳转暂停等异步回调据此丢弃过期意图；不落盘
 
   /** 添加内容：收录进库；saveTo 决定额外保存到哪；playNow = 去重追加并播放本批第一首（已在队列则复用，不替换队列）。返回实际新增/跳过数。 */
   addTracks(items: LibTrack[], playNow: boolean, saveTo?: 'all' | 'favs' | TrackKey | null): AddStats;
@@ -227,7 +229,7 @@ function applySnapshotData(data: Partial<PlayerState> & { v?: number }, set: (pa
   if (legacy) {
     for (const t of tracks as Track[]) {
       const k = keyOf(t);
-      lib[k] = { bvid: t.bvid, cid: t.cid, title: t.title, up: t.up, cover: t.cover, duration: t.duration, pageLabel: t.pageLabel, source: t.source };
+      lib[k] = { bvid: t.bvid, cid: t.cid, title: t.title, up: t.up, cover: t.cover, duration: t.duration, pageLabel: t.pageLabel, source: t.source, page: t.page };
     }
   } else {
     for (const [k, t] of Object.entries(data.lib as Record<string, LibTrack>)) {
@@ -385,33 +387,57 @@ export const usePlayer = create<PlayerState>((set, get) => {
       });
   }
 
-  // 曲目库收录：新 key 追加顺序，已有条目刷新元数据（重新解析后标题/封面可能更新）
+  // 用户播放控制操作（点播 / 切歌 / 播放暂停等）递增播放意图版本：跳转暂停这类
+  // 异步回调落地前比对版本，过期即丢弃——等待打开浏览器期间切歌 / 重播不被旧回调
+  // 打断。自然结束的自动接续（ended → next(true)）与删除级联续播不算新的用户意图。
+  function bumpIntent() {
+    set({ intentSeq: get().intentSeq + 1 });
+  }
+
+  // 元信息相等比较（不含键与队列 uid）：曲库变化检测与队列副本同步共用
+  const sameMeta = (a: LibTrack, b: LibTrack) =>
+    a.title === b.title &&
+    a.up === b.up &&
+    a.cover === b.cover &&
+    a.duration === b.duration &&
+    a.pageLabel === b.pageLabel &&
+    a.source === b.source &&
+    a.page === b.page;
+
+  // 曲目库收录：新 key 追加顺序，已有条目刷新元数据（重新解析后标题/封面可能更新）。
+  // 队列里的同名副本以库的最终条目为准同步刷新（保留条目 ID 与顺序——底栏 / 正在
+  // 播放卡片读的是队列对象）；副本是否落后独立于库是否变化判断——库没变但队列仍旧
+  //（如撤销清空恢复的旧副本）也要补齐，否则落后的副本等不到修正。page 缺省不回写，
+  // 红心重喂旧队列对象不得抹掉已补齐的分 P 序号。
   function upsertLib(items: LibTrack[]) {
-    const { lib, libOrder } = get();
+    const { lib, libOrder, tracks } = get();
     const nextLib = { ...lib };
     const nextOrder = libOrder.slice();
+    let nextTracks: Track[] | null = null; // 惰性复制：确有队列副本要刷新才动 tracks
     let added = false;
     let updated = false;
     for (const it of items) {
       const k = keyOf(it);
       const prev = nextLib[k];
+      const merged: LibTrack = prev ? { ...it, page: it.page ?? prev.page } : it;
       if (!prev) {
         nextOrder.push(k);
         added = true;
-      } else if (
-        prev.title !== it.title ||
-        prev.up !== it.up ||
-        prev.cover !== it.cover ||
-        prev.duration !== it.duration ||
-        prev.pageLabel !== it.pageLabel ||
-        prev.source !== it.source
-      ) {
+      } else if (!sameMeta(prev, merged)) {
         updated = true; // 元信息变化也要提交，否则库与队列显示不一致
       }
-      nextLib[k] = it;
+      const qi = tracks.findIndex((t) => keyOf(t) === k); // 队列按 key 去重，最多一项
+      if (qi >= 0 && !sameMeta(tracks[qi], merged)) {
+        if (!nextTracks) nextTracks = tracks.slice();
+        nextTracks[qi] = { ...nextTracks[qi], ...merged };
+      }
+      nextLib[k] = merged;
     }
-    if (added) set({ lib: nextLib, libOrder: nextOrder });
-    else if (updated) set({ lib: nextLib }); // 只刷新元数据，不动顺序
+    if (!added && !updated && !nextTracks) return;
+    const patch: Partial<PlayerState> = { lib: nextLib };
+    if (added) patch.libOrder = nextOrder;
+    if (nextTracks) patch.tracks = nextTracks;
+    set(patch); // 只刷新元数据时不动顺序
   }
 
   // 按来源物化曲目列表（缺库条目跳过）
@@ -521,6 +547,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     parseTargetHint: null,
     focusAddTick: 0,
     toast: null,
+    intentSeq: 0,
 
     addTracks(items, playNow, saveTo = null) {
       if (items.length === 0) return { saved: 0, skipped: 0 };
@@ -547,7 +574,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
         // 追加去重后从本批第一首播放：已在队列的直接跳到既有条目（2026-10-14），
         // 不替换既有队列结构、不制造重复副本
         const startIdx = appendQueue(items, get().tracks);
-        if (startIdx >= 0) startTrack(startIdx);
+        if (startIdx >= 0) {
+          bumpIntent();
+          startTrack(startIdx);
+        }
       }
       saveSnapshot(get(), true);
       return { saved, skipped };
@@ -609,7 +639,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
       if (!currentId) {
         // 没有正在播的：等同追加并从插入的第一首开始（无播放可打断）
         const startIdx = appendQueue(items, tracks);
-        if (startIdx >= 0) startTrack(startIdx);
+        if (startIdx >= 0) {
+          bumpIntent();
+          startTrack(startIdx);
+        }
         saveSnapshot(get(), true);
         return;
       }
@@ -637,7 +670,10 @@ export const usePlayer = create<PlayerState>((set, get) => {
 
     playAt(uid) {
       const index = get().tracks.findIndex((t) => t.uid === uid);
-      if (index >= 0) startTrack(index);
+      if (index >= 0) {
+        bumpIntent();
+        startTrack(index);
+      }
     },
 
     playFrom(source, key) {
@@ -647,11 +683,13 @@ export const usePlayer = create<PlayerState>((set, get) => {
       const idx = tracks.findIndex((t) => keyOf(t) === key);
       if (idx < 0) return;
       set({ tracks, clearedBackup: null });
+      bumpIntent();
       startTrack(idx);
       saveSnapshot(get(), true);
     },
 
     toggle() {
+      bumpIntent();
       const { currentId, tracks, playing, savedSeek, position } = get();
       if (!currentId) {
         if (tracks.length > 0) startTrack(0);
@@ -687,6 +725,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     // 引擎设置意图。已在播/解析中/缓冲中都是安全 no-op：不依赖 store 的滞后 playing
     // 做守卫（媒体指令到达与事件回写之间有异步窗口，守卫翻转会错向）
     play() {
+      bumpIntent();
       const { tracks, currentId, playing, savedSeek, position } = get();
       if (!currentId) {
         if (tracks.length > 0) startTrack(0);
@@ -713,12 +752,14 @@ export const usePlayer = create<PlayerState>((set, get) => {
     // 系统媒体键入口：明确的暂停意图（幂等）。引擎设置意图并补报，快照由
     // patchMedia 的播放类立即写承接
     pause() {
+      bumpIntent();
       enginePause();
     },
 
     next(auto) {
       const { tracks, mode, currentId } = get();
       if (tracks.length === 0) return;
+      if (!auto) bumpIntent(); // 手动切歌是新的播放意图；自然结束的自动接续（ended → next(true)）不是
       const index = tracks.findIndex((t) => t.uid === currentId);
       if (auto && mode === 'one' && index >= 0) {
         startTrack(index, 0); // 单曲循环仅影响自然结束
@@ -759,6 +800,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       if (tracks.length === 0) return;
       const index = tracks.findIndex((t) => t.uid === currentId);
       const prev = index <= 0 ? tracks.length - 1 : index - 1;
+      bumpIntent();
       startTrack(prev);
     },
 
@@ -828,7 +870,15 @@ export const usePlayer = create<PlayerState>((set, get) => {
     undoClear() {
       const backup = get().clearedBackup;
       if (!backup) return;
-      set({ tracks: backup.tracks, currentId: backup.currentId, clearedBackup: null });
+      // 恢复时按 bvid:cid 合并最新曲库元数据：备份存续期间库可能已被重新解析刷新
+      //（如补齐 page），原样恢复会带回旧副本；队列 ID、顺序与播放状态保持备份
+      // 原样（撤销不重播）
+      const { lib } = get();
+      const tracks = backup.tracks.map((t) => {
+        const latest = lib[keyOf(t)];
+        return latest ? { ...t, ...latest, uid: t.uid } : t;
+      });
+      set({ tracks, currentId: backup.currentId, clearedBackup: null });
       saveSnapshot(get(), true);
     },
 

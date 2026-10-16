@@ -1,9 +1,9 @@
 // 歌曲列表主区：全部音乐 / 我的喜欢 / 最近播放 / 歌单详情多种视图共用。
 // 点行 = 用当前浏览列表建立队列并从该曲播放（保存与播放分离，不改歌单）；
-// 行内 ⋯ 菜单：下一首播放 / 加入播放队列 / 添加到歌单 / 从当前歌单移除 / 从最近播放移除 / 打开原页面；
+// 行内 ⋯ 菜单：下一首播放 / 加入播放队列 / 添加到歌单 / 从当前歌单移除 / 从最近播放移除 / 在B站看视频；
 // 红心独立于菜单，直接切换「我的喜欢」。UP 主不作歌手展示：歌名为主，来源次之。
 import { useEffect, useState } from 'react';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { jumpToVideo } from '../videoJump';
 import { keyOf, usePlayer, type LibTrack, type TrackKey } from '../store';
 import { useSession } from '../session';
 import { useUiBus } from '../uiBus';
@@ -332,7 +332,7 @@ export default function TrackView() {
                       setDelKey(r.key);
                     }}
                     onOpen={() => {
-                      void openUrl(`https://www.bilibili.com/video/${r.item.bvid}/`);
+                      void jumpToVideo(r.item);
                       setMenu(null);
                     }}
                     onClose={() => setMenu(null)}
@@ -438,7 +438,7 @@ function RowMenu(props: {
             从音乐库删除
           </button>
         )}
-        <button onClick={props.onOpen}>打开 B 站原页面</button>
+        <button onClick={props.onOpen}>在B站看视频</button>
       </div>
     </>
   );

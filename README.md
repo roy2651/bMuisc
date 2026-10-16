@@ -83,9 +83,9 @@ macOS 自动更新将在公证完成后开放；目前请从 Releases 下载新�
 
 ## 功能边界与后续计划
 
-当前代码版本为 **v0.5.0**，已实现 Windows 迷你播放器；可下载的版本与安装包以 Releases 为准。应用以音频播放为主，不提供离线下载、媒体转存或会员内容解锁。
+当前代码版本为 **v0.5.2**，已实现 Windows 迷你播放器；可下载的版本与安装包以 Releases 为准。应用以音频播放为主，不提供离线下载、媒体转存或会员内容解锁。
 
-[迷你播放器](docs/mini-player.md) 当前仅开放 Windows 入口，macOS 待单独验证。接下来优先收尾当前版本并完善日常听歌体验；音视频切换暂缓，保留为按需启动的后续功能。主窗口窄窗导航、队列遮挡优化、Linux 适配及 macOS 公证仍在待办中。
+[迷你播放器](docs/mini-player.md) 当前仅开放 Windows 入口，macOS 待单独验证。应用内音视频切换已撤销（2026-10-16）：想看画面时通过「在B站看视频」暂停音乐并跳转浏览器，设计见[原视频跳转](docs/video-jump.md)。下一步实现原视频跳转增强；主窗口窄窗导航、队列遮挡优化、Linux 适配及 macOS 公证仍在待办中。
 
 收藏夹导入与推送均为用户主动操作、增量追加，不是自动镜像同步。完整交互约定和后续阶段见[项目规划](docs/project-plan.md)，实施及验收记录见[项目进度](docs/project-status.md)。
 
@@ -123,7 +123,19 @@ npm run app:build # 构建桌面安装包
 - [自动更新机制](docs/auto-update.md)
 - [平台扩展可行性](docs/platform-feasibility.md)
 - [迷你播放器需求与验收](docs/mini-player.md)
+- [原视频跳转需求与设计](docs/video-jump.md)
 - [迷你浮窗历史评估](docs/mini-window-eval.md)
+
+### B 站 API 参考
+
+- [哔哩哔哩开放平台文档](https://open.bilibili.com/doc)（官方）：B 站对外开放接口与接入规范的官方入口，功能扩展调研的首选。
+- 本项目当前使用的网页端接口（扫码登录、收藏夹、播放地址）细节主要来自社区整理（原 bilibili-API-collect 仓库 2026-01 已删库，现存镜像内容新旧混杂，使用前以实测为准）：
+  - [bilibili-API-collect 镜像 · 二维码登录](https://lxb007981.github.io/bilibili-API-collect/login/login_action/QR.html)（部分内容为旧版接口）
+  - [DeepWiki · BBDown Authentication](https://deepwiki.com/nilaoda/BBDown/4.2-authentication)（现行 generate 接口与状态码的工程印证）
+  - [bilibili-API-collect 镜像 · 收藏夹基本信息](https://jason20.github.io/bilibili-api-collect-mirror/docs/fav/info.html)
+  - [bilibili-API-collect 镜像 · 收藏夹内容](https://jason20.github.io/bilibili-api-collect-mirror/docs/fav/list.html)
+  - [bilibili-API-collect 镜像 · 收藏夹操作](https://jason20.github.io/bilibili-api-collect-mirror/docs/fav/action.html)
+  - [BBPlayer 登录文档](https://bbplayer-app-bbplayer.mintlify.app/features/bilibili-login)
 
 ## 说明
 

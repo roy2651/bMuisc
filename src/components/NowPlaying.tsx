@@ -1,8 +1,8 @@
 // 正在播放页：歌名第一信息，UP/来源次级，封面 + 柔和模糊背景 + 播放波浪 + 原页面入口。
 // 从底栏封面展开进入；收起回到之前的浏览位置（浏览哪里与播什么互不影响）。
 
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { usePlayer, type Track } from '../store';
+import { jumpToVideo } from '../videoJump';
 import { fmtDur, thumbUrl } from '../util';
 import { IconExternal, IconX, LogoTile } from './icons';
 import ThumbImg from './ThumbImg';
@@ -62,8 +62,8 @@ export default function NowPlaying({ track, loading, playing }: Props) {
           ) : (
             <p className="np-sub">时长 {fmtDur(track.duration)} · 来自 B 站</p>
           )}
-          <button className="btn ghost sm" onClick={() => openUrl(`https://www.bilibili.com/video/${track.bvid}/`)}>
-            <IconExternal size={15} /> 打开原页面
+          <button className="btn ghost sm" onClick={() => void jumpToVideo(track)}>
+            <IconExternal size={15} /> 在B站看视频
           </button>
         </div>
       </div>

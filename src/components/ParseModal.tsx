@@ -58,6 +58,7 @@ export default function ParseModal({ view, defaultTarget, onClose, onConfirm }: 
           duration: p.duration,
           pageLabel: hasMultiP ? `P${p.page}` : undefined,
           source: hasMultiP ? view.title : undefined,
+          page: hasMultiP ? p.page : undefined,
         }));
     }
     return eps

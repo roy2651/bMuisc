@@ -3,7 +3,8 @@
 import { usePlayer, keyOf, MODE_TEXT } from '../store';
 import { fmtDur } from '../util';
 import ThumbImg from './ThumbImg';
-import { IconHeart, IconHeartFilled, IconLoop, IconNext, IconOne, IconOrder, IconPause, IconPlay, IconPrev, IconQueue, IconRandom, IconVolume, IconVolumeMuted } from './icons';
+import { IconHeart, IconHeartFilled, IconExternal, IconLoop, IconNext, IconOne, IconOrder, IconPause, IconPlay, IconPrev, IconQueue, IconRandom, IconVolume, IconVolumeMuted } from './icons';
+import { jumpToVideo } from '../videoJump';
 
 function ModeIcon() {
   const mode = usePlayer((s) => s.mode);
@@ -111,6 +112,14 @@ export default function PlayerBar() {
             aria-label="音量"
           />
           <span className="vol-pct">{Math.round(effective * 100)}%</span>
+          <button
+            className="btn ghost sm"
+            onClick={() => track && void jumpToVideo(track)}
+            disabled={!track}
+            title="在B站看视频"
+          >
+            <IconExternal size={14} /> 看视频
+          </button>
           <button
             className={`btn ghost sm queue-toggle${queueOpen ? ' on' : ''}`}
             onClick={() => setQueueOpen(!queueOpen)}
