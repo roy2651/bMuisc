@@ -29,7 +29,7 @@
 
 点击「立即更新」后的完整链路：
 
-1. 前端 `update.downloadAndInstall()` 下载安装包（进度事件：Started / Progress / Finished）。
+1. 前端先 `update.download()` 下载安装包（进度事件：Started / Progress / Finished），完成后再单独 `update.install()` 触发安装——两步拆分保证停滞作废的旧下载绝不会进入安装。
 2. 插件启动 NSIS 安装器，参数 `/P /UPDATE /R`（passive 模式）：`/P` 被动进度条、`/UPDATE` 更新模式、`/R` 装完重启。
    - 依据：plugins-workspace `updater/src/config.rs`——`nsis_args()` passive 给 `/P`，`nsis_restart_after_install_args()` 给 `/R`（`restart_after_install` 默认 `true`，updater.rs）。
    - NSIS 模板 `.onInstSuccess`：passive / silent 下仅当命令行有 `/R` 才 `RunAsUser` 重启应用。
@@ -41,6 +41,7 @@
 - 启动后 6 秒静默检查一次（避开启动期的解析 / 代理请求），失败静默不打扰。
 - 发现新版本 → 弹窗（版本号 + release notes + 立即更新 / 稍后再说）。
 - 下载 / 安装阶段弹窗禁止关闭（安装时应用即将退出，防止误以为更新失败）。
+- 进度条仅在收到 Started 且总大小为正数时显示真实百分比；检查更新 / 连接下载 / 总大小未知 / 安装阶段显示转圈等待，不渲染占位宽度（2026-10-16 修复假进度：此前固定 40% 的占位条在 Started 到达时倒退回 0%，无 Content-Length 时永远停在 40%）。重试时进度归零保留——插件无断点续传，重试从零下载。
 - 顶栏齿轮 → 设置弹窗：版本信息、启动检查开关（`localStorage` `bmuisc.autoupdate`）、手动检查。
 - 检查与下载请求都在 Rust 侧进行，不受前端 CSP 约束。
 

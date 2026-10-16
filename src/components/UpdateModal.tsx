@@ -55,6 +55,9 @@ export default function UpdateModal({ update, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('confirm');
   // 重试时重新 check 更新清单的短暂窗口（见 start）：状态文案区分「检查」「下载」
   const [checking, setChecking] = useState(false);
+  // 是否已收到下载 Started 事件（每次尝试重置）：连接建立前与总大小未知时没有
+  // 可计算的百分比，这些阶段显示转圈等待，不渲染固定宽度的假进度条
+  const [started, setStarted] = useState(false);
   const [progress, setProgress] = useState({ got: 0, total: null as number | null });
   const [error, setError] = useState<string | null>(null);
   const runningRef = useRef(false);
@@ -97,8 +100,10 @@ export default function UpdateModal({ update, onClose }: Props) {
     const attempt = ++attemptRef.current;
     setError(null);
     setPhase('downloading');
-    // 立即归零：重试瞬间到新尝试的 Started 事件之间不显示上一次的残留进度
+    // 立即归零并回到未连接态：重试瞬间到新尝试的 Started 事件之间不显示上一次的
+    // 残留进度（插件无断点续传，重试从零下载，进度不得叠加上次字节数）
     setProgress({ got: 0, total: null });
+    setStarted(false);
     let lastEventAt = Date.now();
     const watchdog = window.setInterval(() => {
       if (attemptRef.current !== attempt) return;
@@ -143,6 +148,7 @@ export default function UpdateModal({ update, onClose }: Props) {
           if (event.event === 'Started') {
             // 重试是从零下载（插件无断点续传），进度必须归零，否则第二次尝试的
             // 进度会叠加第一次的字节数，进度条虚高直到卡在 100%
+            setStarted(true);
             setProgress({ got: 0, total: event.data.contentLength ?? null });
           } else if (event.event === 'Progress') {
             setProgress((p) => ({ ...p, got: p.got + event.data.chunkLength }));
@@ -174,7 +180,12 @@ export default function UpdateModal({ update, onClose }: Props) {
     }
   }
 
-  const pct = progress.total ? Math.min(100, Math.round((progress.got / progress.total) * 100)) : null;
+  // 可计算进度 = 已收到 Started 且总大小为正数；其余阶段（检查 / 连接 / 未知大小 /
+  // 安装）没有真实百分比，显示转圈等待，不渲染带宽度动画的进度条——此前固定 40%
+  // 的占位宽度会在 Started 到达时倒退回 0%，且大小未知时永远停在假进度上
+  const total = progress.total ?? 0;
+  const showBar = phase === 'downloading' && started && total > 0;
+  const pct = showBar ? Math.min(100, Math.round((progress.got / total) * 100)) : 0;
 
   return (
     <div className="modal-mask" onClick={() => phase === 'confirm' && !runningRef.current && onClose()}>
@@ -202,16 +213,27 @@ export default function UpdateModal({ update, onClose }: Props) {
 
         {phase !== 'confirm' && (
           <>
-            <div className="upd-progress">
-              <div className="upd-bar" style={{ width: pct != null ? `${pct}%` : '40%' }} />
-            </div>
-            <p className="upd-status">
-              {phase === 'downloading'
-                ? checking
-                  ? '正在检查更新…'
-                  : `正在下载 ${fmtMB(progress.got)} MB${progress.total ? ` / ${fmtMB(progress.total)} MB${pct != null ? `（${pct}%）` : ''}` : ''}…`
-                : '正在安装，应用即将自动重启…'}
-            </p>
+            {showBar ? (
+              <>
+                <div className="upd-progress">
+                  <div className="upd-bar" style={{ width: `${pct}%` }} />
+                </div>
+                <p className="upd-status">
+                  正在下载 {fmtMB(progress.got)} / {fmtMB(total)} MB（{pct}%）…
+                </p>
+              </>
+            ) : (
+              <div className="loading-line upd-status">
+                <span className="spinner inline" />
+                {phase === 'installing'
+                  ? '正在安装，应用即将自动重启…'
+                  : checking
+                    ? '正在检查更新…'
+                    : started
+                      ? `已下载 ${fmtMB(progress.got)} MB…`
+                      : '正在连接下载…'}
+              </div>
+            )}
             {error && <p className="upd-error">更新失败：{error}</p>}
           </>
         )}
