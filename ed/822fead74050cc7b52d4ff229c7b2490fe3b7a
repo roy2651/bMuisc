@@ -1,0 +1,26 @@
+src/components/UpdateModal.tsx
+  s_34cee9fc3fc328::t_f2d621795a40a6 58-60
+  s_34cee9fc3fc328::t_29c8e8ad6e4feb 183-188
+  s_34cee9fc3fc328::t_52167bb29e88bc 103-104,106
+  s_34cee9fc3fc328::t_264bd7482318b9 151
+  s_34cee9fc3fc328::t_38eef7eba4898c 216-236
+docs/auto-update.md
+  s_34cee9fc3fc328::t_13e215e0d1bb95 32
+  s_34cee9fc3fc328::t_da262391f21cf9 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ed822fead74050cc7b52d4ff229c7b2490fe3b7a",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5.3"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
