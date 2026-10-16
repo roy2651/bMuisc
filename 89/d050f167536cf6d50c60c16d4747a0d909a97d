@@ -1,0 +1,36 @@
+src-tauri/Cargo.toml
+  s_34cee9fc3fc328::t_46aa4f80cdf962 3
+README.md
+  s_34cee9fc3fc328::t_13a8ef247dc7a1 88
+docs/project-status.md
+  s_34cee9fc3fc328::t_db70d979868392 48
+  s_34cee9fc3fc328::t_538f8b08b41b9b 69
+AGENTS.md
+  s_34cee9fc3fc328::t_431fc1a3c32aca 12
+docs/project-plan.md
+  s_34cee9fc3fc328::t_62825f8f64c915 5
+package.json
+  s_34cee9fc3fc328::t_e2d7ababbb7c21 4
+src-tauri/tauri.conf.json
+  s_34cee9fc3fc328::t_2b032375ea0cdd 4
+package-lock.json
+  s_34cee9fc3fc328::t_b98cf8e2eacb50 3,9
+src-tauri/Cargo.lock
+  s_34cee9fc3fc328::t_de03f10663a22d 375
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "89d050f167536cf6d50c60c16d4747a0d909a97d",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5-3-flash"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
