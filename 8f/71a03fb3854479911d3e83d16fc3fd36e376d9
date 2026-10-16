@@ -1,0 +1,35 @@
+docs/project-plan.md
+  s_13c8e8ed9df516::t_6e839383ecb362 5,7,49,61,239-240,248
+docs/video-jump.md
+  s_13c8e8ed9df516::t_6e839383ecb362 67-69,83
+docs/project-status.md
+  s_13c8e8ed9df516::t_6e839383ecb362 48,71,77
+AGENTS.md
+  s_079856a25a2195::t_a72c5d9377c1b0 12,16,21,47,49,52
+README.md
+  s_079856a25a2195::t_09268974b4b738 30,82,88,90,115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8f71a03fb3854479911d3e83d16fc3fd36e376d9",
+  "prompts": {},
+  "sessions": {
+    "s_079856a25a2195": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fea51-d9ea-7081-8ffe-33254f227def",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    },
+    "s_13c8e8ed9df516": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c192-272f-7c02-b235-3b693670d209",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
