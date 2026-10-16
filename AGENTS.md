@@ -9,7 +9,7 @@
 
 ## 项目背景与当前状态
 
-以下现状基于 2026-10-16 的 v0.5.3（原视频跳转）；功能提交 `1e3901d`、版本提交 `88b70dd`。发布资产以 GitHub Releases 为准，当前实现与验证进度见 `docs/project-status.md`、`docs/video-jump.md`；v0.5.0 迷你播放器的历史收尾记录见 `docs/reviews/2026-10-09-v050-closeout.md`。
+以下现状基于 2026-10-16 的 v0.5.4（更新弹窗下载进度修复，功能提交 `ed822fe`，版本提交即 tag `v0.5.4`）；v0.5.3 原视频跳转功能提交 `1e3901d`、版本提交 `88b70dd`。发布资产以 GitHub Releases 为准，当前实现与验证进度见 `docs/project-status.md`、`docs/video-jump.md`；v0.5.0 迷你播放器的历史收尾记录见 `docs/reviews/2026-10-09-v050-closeout.md`。
 
 - 产品定位：以 B 站音乐内容为来源、听音频优先的本地桌面播放器，保留来源信息和打开原视频的入口。
 - 技术栈：Tauri 2、React 19、TypeScript、Vite、Zustand；Rust 负责 B 站解析和本地媒体代理。
