@@ -1,0 +1,119 @@
+docs/project-status.md
+  s_34cee9fc3fc328::t_2c33544186d079 59
+  s_34cee9fc3fc328::t_617f509c89b4d8 30
+  s_34cee9fc3fc328::t_6652b87fcba0bb 75
+  s_34cee9fc3fc328::t_86a28676b47101 42
+  s_34cee9fc3fc328::t_a38eb185b942f1 73
+  s_34cee9fc3fc328::t_b08e0697d32aae 18
+  s_34cee9fc3fc328::t_b8715b7701fb37 71
+  s_34cee9fc3fc328::t_0501d585c55bb5 77
+  s_34cee9fc3fc328::t_093a6366c156c3 22
+src/components/FavImportModal.tsx
+  s_34cee9fc3fc328::t_883d464d3db670 118
+src/components/PlayerBar.tsx
+  s_34cee9fc3fc328::t_82c2e36e55f366 6-7
+  s_34cee9fc3fc328::t_1871fb4d8f0e19 116-122
+  s_34cee9fc3fc328::t_277f9023befa5c 115
+scripts/verify-jump.cjs
+  s_34cee9fc3fc328::t_b361cae216a7b4 170-239
+  s_34cee9fc3fc328::t_d3b30db9283fd4 240-274
+  s_34cee9fc3fc328::t_9cbf59b9dbb10b 285,289
+  s_34cee9fc3fc328::t_8e2ef1b5d04c40 84
+  s_34cee9fc3fc328::t_31469bed0bfd8f 3-5
+  s_34cee9fc3fc328::t_a1e300d5a010ed 1-2,6-32,35-68,74-79,82-83,85-169,275-284,286-288,290-291
+  s_34cee9fc3fc328::t_69b6b9a20eb173 33-34
+  s_34cee9fc3fc328::t_00278cb0b06d37 80-81
+  s_34cee9fc3fc328::t_6a78dcaf4806f5 69-73
+src/videoJump.ts
+  s_34cee9fc3fc328::t_1513f1a7e80c4d 1-32,34-39,43,45
+  s_34cee9fc3fc328::t_a4a6579c33a307 33,40-42,44
+AGENTS.md
+  s_34cee9fc3fc328::t_faba39399df861 32
+  s_34cee9fc3fc328::t_c06e83794e3bde 65
+  s_34cee9fc3fc328::t_0e83093932d981 110
+  s_34cee9fc3fc328::t_13e1ce097957f6 52
+  s_34cee9fc3fc328::t_5adae9e868b37b 21
+  s_34cee9fc3fc328::t_8b341a812b1e81 96
+README.md
+  s_34cee9fc3fc328::t_4c0c5bcef16201 88
+  s_34cee9fc3fc328::t_68dbf710defdc0 126,129-130
+  s_34cee9fc3fc328::t_dd7733e9728117 86,139
+  s_34cee9fc3fc328::t_bcfe3a499587d6 131-138
+src/components/ParseModal.tsx
+  s_34cee9fc3fc328::t_33779e7ebd2850 61
+src/components/NowPlaying.tsx
+  s_34cee9fc3fc328::t_44928482b4a7e3 5
+  s_34cee9fc3fc328::t_8dd06e37a55d54 65-66
+src/store.ts
+  s_34cee9fc3fc328::t_fda5cfe251687e 577-580
+  s_34cee9fc3fc328::t_5df10ebe1167d4 673-676
+  s_34cee9fc3fc328::t_0184e05d0c7f66 755
+  s_34cee9fc3fc328::t_5f9d9cdd68f845 390-396,407,413,416,422,434,437-440
+  s_34cee9fc3fc328::t_4ca110af691ba1 803
+  s_34cee9fc3fc328::t_02d6b31e3fbb84 397-406,408-411,426,429-433,436
+  s_34cee9fc3fc328::t_33e189cd44433a 232
+  s_34cee9fc3fc328::t_f371de5424b985 156
+  s_34cee9fc3fc328::t_76bf3051ed942d 550
+  s_34cee9fc3fc328::t_850e170a3f63b0 686
+  s_34cee9fc3fc328::t_54c778e5612199 26
+  s_34cee9fc3fc328::t_79e236cda50ac9 692
+  s_34cee9fc3fc328::t_c7f0eb9d17a640 762
+  s_34cee9fc3fc328::t_bf45d12142dec5 873-881
+  s_34cee9fc3fc328::t_8c050bbff97511 728
+  s_34cee9fc3fc328::t_6aba20a8d4dfd5 642-645
+src/components/TrackView.tsx
+  s_34cee9fc3fc328::t_b5f83f7ecfa764 441
+  s_34cee9fc3fc328::t_2b8371e480b561 3,6
+  s_34cee9fc3fc328::t_409514d107deb8 335
+docs/project-plan.md
+  s_34cee9fc3fc328::t_2f3f56c0a47937 37
+  s_34cee9fc3fc328::t_eea8e653e813d4 52
+  s_34cee9fc3fc328::t_f13d5ccfa962c2 146,148
+  s_34cee9fc3fc328::t_22284a06cf6a94 247
+  s_34cee9fc3fc328::t_7b1ff07924d017 7
+  s_34cee9fc3fc328::t_ea7307cce83d3e 17
+  s_34cee9fc3fc328::t_161eb2629cf88b 256
+  s_34cee9fc3fc328::t_4516ee22ce2b8d 265
+  s_34cee9fc3fc328::t_c64c45138a172e 225
+  s_34cee9fc3fc328::t_ac85deaab06681 229
+  s_34cee9fc3fc328::t_c0fa810373721c 235
+  s_34cee9fc3fc328::t_4e992a91e86465 246
+  s_34cee9fc3fc328::t_bff800a95155cf 61
+  s_34cee9fc3fc328::t_3e3145624dbedd 35
+  s_34cee9fc3fc328::t_03a38e6c32f3f3 253
+  s_34cee9fc3fc328::t_a00c2b7847da31 11
+  s_34cee9fc3fc328::t_fbbf6ecef976a5 82
+docs/video-jump.md
+  s_34cee9fc3fc328::t_03114898ae695c 95
+  s_34cee9fc3fc328::t_9641e9b6a1171e 54-55
+  s_34cee9fc3fc328::t_50e12b2804675e 5
+  s_34cee9fc3fc328::t_b6c1e1e8d2ceea 67
+  s_34cee9fc3fc328::t_7a7eb92447bcba 80-81
+  s_34cee9fc3fc328::t_cca0274836b3a8 88
+  s_34cee9fc3fc328::t_9c31726a1244f9 94
+  s_34cee9fc3fc328::t_54be098adb0592 39
+  s_34cee9fc3fc328::t_46675c1603da58 31
+  s_34cee9fc3fc328::t_c1071f25077804 59,63
+  s_34cee9fc3fc328::t_c080b0fbebd7eb 56
+  s_34cee9fc3fc328::t_6ef6e371e45926 1-4,6-30,32-38,41-53,57-58,60-62,64-66,68-79,82-86,89-93,96
+  s_34cee9fc3fc328::t_e0e7685071e9d9 87
+  s_34cee9fc3fc328::t_2e8a1e2f6b9864 97
+  s_34cee9fc3fc328::t_65c21b5d90a4a0 98-127
+  s_34cee9fc3fc328::t_49b5fc01b04f50 40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1e3901d4be57980ea5e961b578e5138e6215f30a",
+  "prompts": {},
+  "sessions": {
+    "s_34cee9fc3fc328": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4e4a7386-fa51-4bd7-8f6e-c553f620396d",
+        "model": "glm-5.3"
+      },
+      "human_author": "roy2651 <roy2651@gmail.com>"
+    }
+  }
+}
