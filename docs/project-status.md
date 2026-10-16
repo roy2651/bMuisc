@@ -45,7 +45,7 @@
 
 ## 当前进度
 
-截至 2026-10-16，版本基线为 **v0.5.2**（v0.5.1 修复错误重试意图与失败提示 `92e4d9f`，v0.5.2 完成队列去重与删除级联 `6e8e2e8`，版本提交 `ccb6e7b`；package.json / Cargo.toml / Tauri 配置一致）。此处描述仓库实现进度；远程 Release 与安装包状态以 [Releases](https://github.com/roy2651/bMuisc/releases) 为准。
+截至 2026-10-16，版本基线为 **v0.5.3**（v0.5.2 完成队列去重与删除级联 `6e8e2e8`，v0.5.3 新增「在B站看视频」原视频跳转 `1e3901d`；package.json / Cargo.toml / Tauri 配置一致）。此处描述仓库实现进度；远程 Release 与安装包状态以 [Releases](https://github.com/roy2651/bMuisc/releases) 为准。
 
 桌面端已实现：
 
